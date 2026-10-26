@@ -472,6 +472,8 @@ export function readerOpen() {
 }
 
 function setThemeColor(theme) {
-  const c = { light: '#ffffff', sepia: '#f5ecd9', dark: '#141414', app: '#ac0030' }[theme] || '#ac0030';
+  const c = { light: '#ffffff', sepia: '#f5ecd9', dark: '#121212', app: '#ac0030' }[theme] || '#ac0030';
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', c);
+  // farven bag appen (synlig, hvis iOS viser en stribe nederst)
+  document.documentElement.style.setProperty('--under', theme === 'app' ? '#f7f7f7' : c);
 }

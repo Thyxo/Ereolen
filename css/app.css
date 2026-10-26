@@ -29,7 +29,9 @@
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html { -webkit-text-size-adjust: 100%; background: #fff; }
+/* Baggrunden bag appen har fanebarens farve, så en evt. stribe nederst
+   (iOS-hjemmeskærm) flyder sammen med fanebaren. */
+html { -webkit-text-size-adjust: 100%; background: var(--under, #f7f7f7); }
 /* iOS-hjemmeskærm med gennemsigtig statusbar: brug den fulde skærmhøjde (lvh),
    ellers bliver der en hvid stribe under fanebaren. */
 html, body { position: fixed; top: 0; left: 0; right: 0; height: 100vh; height: var(--app-h, 100lvh); overflow: hidden; overscroll-behavior: none; }
@@ -37,7 +39,7 @@ body {
   margin: 0;
   font-family: var(--sans);
   color: var(--ink);
-  background: var(--bg);
+  background: var(--under, #f7f7f7);
   font-size: 17px;
   line-height: 1.4;
   touch-action: manipulation;
@@ -89,7 +91,8 @@ h1, h2, h3, h4 { margin: 0; }
 .tabbar {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 30; height: var(--tabh);
   display: grid; grid-template-columns: repeat(5, 1fr);
-  background: rgba(247,247,247,.97);
+  background: #f7f7f7;
+  box-shadow: 0 120px 0 0 #f7f7f7;
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   border-top: 1px solid #dcdcdc;
   padding: 6px 0 calc(8px + var(--safe-bottom));
@@ -297,7 +300,7 @@ h1, h2, h3, h4 { margin: 0; }
 .ribbon { position: absolute; top: 0; right: 22px; width: 13px; height: 24px; background: var(--r-ink); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%); display: none; opacity: .85; }
 .ribbon.show { display: block; }
 
-.r-bottom { flex: none; display: flex; align-items: flex-end; gap: 6px; padding: 8px 10px calc(var(--safe-bottom) + 12px); }
+.r-bottom { flex: none; display: flex; align-items: flex-end; gap: 6px; padding: 8px 10px calc(var(--safe-bottom) + 12px); background: var(--r-bg); box-shadow: 0 120px 0 0 var(--r-bg); }
 .r-slider { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0; padding: 0 8px 0; touch-action: none; }
 .r-hit { width: 100%; padding: 9px 0 13px; }
 .r-label { font-family: var(--sans); font-size: 13px; color: var(--r-ink-2); letter-spacing: .01em; padding: 2px 10px; }
