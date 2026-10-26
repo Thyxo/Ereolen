@@ -202,6 +202,16 @@ document.addEventListener('click', (e) => {
 });
 window.addEventListener('popstate', route);
 
+// Sikkerhedsnet til iOS: hvis appen er lavere end skærmen, så stræk den
+function fitHeight() {
+  app.style.removeProperty('--app-h');
+  const h = Math.max(window.innerHeight, document.documentElement.clientHeight);
+  if (app.getBoundingClientRect().height < h - 1) app.style.setProperty('--app-h', `${h}px`);
+}
+window.addEventListener('resize', fitHeight);
+window.addEventListener('orientationchange', () => setTimeout(fitHeight, 300));
+fitHeight();
+
 // Forhindr zoom med to fingre og dobbelttryk (føles som en app)
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });

@@ -30,7 +30,9 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html { -webkit-text-size-adjust: 100%; background: #fff; }
-html, body { position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; }
+/* iOS-hjemmeskærm med gennemsigtig statusbar: brug den fulde skærmhøjde (lvh),
+   ellers bliver der en hvid stribe under fanebaren. */
+html, body { position: fixed; top: 0; left: 0; right: 0; height: 100vh; height: 100lvh; overflow: hidden; overscroll-behavior: none; }
 body {
   margin: 0;
   font-family: var(--sans);
@@ -52,7 +54,7 @@ h1, h2, h3, h4 { margin: 0; }
 .brand, .hdr, .tabbar, .card-no { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 
 /* ---------- skal: faste faner, kun indholdet scroller ---------- */
-#app { position: fixed; inset: 0; overflow: hidden; background: #fff; }
+#app { position: fixed; top: 0; left: 0; right: 0; height: 100vh; height: var(--app-h, 100lvh); overflow: hidden; background: #fff; }
 #views, #stack { position: absolute; inset: 0; }
 #views { transition: transform .34s cubic-bezier(.2,.8,.2,1); }
 #stack { pointer-events: none; }
@@ -85,7 +87,7 @@ h1, h2, h3, h4 { margin: 0; }
 
 /* faner */
 .tabbar {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; height: var(--tabh);
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 30; height: var(--tabh);
   display: grid; grid-template-columns: repeat(5, 1fr);
   background: rgba(247,247,247,.97);
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
@@ -255,7 +257,7 @@ h1, h2, h3, h4 { margin: 0; }
 /* ---------- læser ---------- */
 .reader {
   --r-bg: #ffffff; --r-ink: #000000; --r-ink-2: #6b6b6b; --r-line: #e4e4e6; --r-acc: #000;
-  position: fixed; inset: 0; z-index: 100;
+  position: absolute; inset: 0; z-index: 100;
   background: var(--r-bg); color: var(--r-ink);
   display: flex; flex-direction: column;
   transform: translateY(100%); transition: transform .32s cubic-bezier(.2,.8,.2,1);
