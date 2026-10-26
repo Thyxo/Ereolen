@@ -126,7 +126,7 @@ export function openReader(root, book, startIndex, onClose) {
   const st = getState().settings;
   const el = document.createElement('div');
   el.className = `reader theme-${st.theme} font-${st.font}`;
-  el.style.setProperty('--fs', `${st.fontSize}px`);
+  el.style.setProperty('--fs', `${st.fontSize === 'auto' ? 17 : st.fontSize}px`);
   el.innerHTML = `
     <header class="r-top">
       <button class="r-btn" data-act="close" aria-label="Luk">${mi('r-close', 'r-close')}</button>
@@ -167,6 +167,7 @@ export function openReader(root, book, startIndex, onClose) {
   let pages = [];
   let cur = 0;
   let pos = null; // tegn-position, der skal bevares ved ny opdeling
+  let effFs = 17; // den skriftstørrelse, der faktisk bruges
 
   if (startIndex == null) {
     const s = bookState(book.id);
@@ -180,7 +181,15 @@ export function openReader(root, book, startIndex, onClose) {
     mText.innerHTML = '';
     const H = Math.max(120, Math.floor(pager.clientHeight - 8 - 10));
     el.style.setProperty('--th', `${H}px`);
-    pages = paginate(flow, mText, H);
+    // »auto«: største skrift, hvor hver skrevet side kan være på én skærm
+    const s = getState().settings;
+    const sizes = s.fontSize === 'auto' ? [17, 16, 15, 14, 13] : [s.fontSize];
+    for (const fs of sizes) {
+      el.style.setProperty('--fs', `${fs}px`);
+      pages = paginate(flow, mText, H);
+      effFs = fs;
+      if (pages.length <= book.pages.length) break;
+    }
     if (pos != null) {
       cur = 0;
       for (let k = 0; k < pages.length; k++) if (pages[k].start <= pos) cur = k;
@@ -359,14 +368,13 @@ export function openReader(root, book, startIndex, onClose) {
   function applySettings() {
     const s = getState().settings;
     el.className = `reader theme-${s.theme} font-${s.font} open`;
-    el.style.setProperty('--fs', `${s.fontSize}px`);
     setThemeColor(s.theme);
     layout();
   }
 
   function openAa() {
     const s = getState().settings;
-    const idx = Math.max(0, SIZES.indexOf(s.fontSize));
+    const idx = Math.max(0, SIZES.indexOf(effFs));
     openSheet(`
       <div class="aa-size">
         <button data-fs="-1" aria-label="Mindre skrift"><small>A</small></button>

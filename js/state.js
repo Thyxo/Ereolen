@@ -30,7 +30,7 @@ function fresh() {
   const now = today0();
   const s = {
     seededAt: now,
-    settings: { fontSize: 17, font: 'times', theme: 'light' },
+    settings: { fontSize: 'auto', font: 'times', theme: 'light' },
     kicker: false,
     lastOpenedId: null,
     sort: 'title',

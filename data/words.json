@@ -6,14 +6,93 @@
     {
       "id": "A",
       "words": [
-        { "word": "Forunderlig", "forms": ["forunderlig", "forunderlige", "forunderligt"], "book": "fyrtojet" },
-        { "word": "Glædestrålende", "forms": ["glædestrålende"], "book": "grantraeet" },
-        { "word": "Kirkeklokke", "forms": ["kirkeklokke", "kirkeklokken", "kirkeklokker", "kirkeklokkerne"], "book": "klods-hans" },
-        { "word": "Lommetørklæde", "forms": ["lommetørklæde", "lommetørklædet", "lommetørklæder"], "book": "lille-claus-og-store-claus" },
-        { "word": "Nattevægter", "forms": ["nattevægter", "nattevægteren", "nattevægtere"], "book": "nattergalen" },
-        { "word": "Pengepung", "forms": ["pengepungen", "pengepunge"], "book": "prinsessen-paa-aerten" },
-        { "word": "Sommerfugl", "forms": ["sommerfugl", "sommerfuglen", "sommerfugle", "sommerfuglene"], "book": "snedronningen" },
-        { "word": "Tjenestepige", "forms": ["tjenestepige", "tjenestepigen", "tjenestepiger"], "book": "tommelise" }
+        {
+          "word": "Forunderlig",
+          "forms": [
+            "forunderlig",
+            "forunderlige",
+            "forunderligt"
+          ],
+          "book": "fyrtojet",
+          "letters": 11,
+          "initial": "F"
+        },
+        {
+          "word": "Glædestrålende",
+          "forms": [
+            "glædestrålende"
+          ],
+          "book": "grantraeet",
+          "letters": 14,
+          "initial": "G"
+        },
+        {
+          "word": "Kirkeklokke",
+          "forms": [
+            "kirkeklokke",
+            "kirkeklokken",
+            "kirkeklokker",
+            "kirkeklokkerne"
+          ],
+          "book": "klods-hans",
+          "letters": 11,
+          "initial": "K"
+        },
+        {
+          "word": "Lommetørklæde",
+          "forms": [
+            "lommetørklæde",
+            "lommetørklædet",
+            "lommetørklæder"
+          ],
+          "book": "lille-claus-og-store-claus",
+          "letters": 13,
+          "initial": "L"
+        },
+        {
+          "word": "Nattevægter",
+          "forms": [
+            "nattevægter",
+            "nattevægteren",
+            "nattevægtere"
+          ],
+          "book": "nattergalen",
+          "letters": 11,
+          "initial": "N"
+        },
+        {
+          "word": "Pengepung",
+          "forms": [
+            "pengepungen",
+            "pengepunge"
+          ],
+          "book": "prinsessen-paa-aerten",
+          "letters": 9,
+          "initial": "P"
+        },
+        {
+          "word": "Sommerfugl",
+          "forms": [
+            "sommerfugl",
+            "sommerfuglen",
+            "sommerfugle",
+            "sommerfuglene"
+          ],
+          "book": "snedronningen",
+          "letters": 10,
+          "initial": "S"
+        },
+        {
+          "word": "Tjenestepige",
+          "forms": [
+            "tjenestepige",
+            "tjenestepigen",
+            "tjenestepiger"
+          ],
+          "book": "tommelise",
+          "letters": 12,
+          "initial": "T"
+        }
       ]
     }
   ]
