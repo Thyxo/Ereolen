@@ -1,6 +1,6 @@
 // Forside, Søg, Læs/lyt, Min side (Lån m.m.), Mere og bogsiden.
 import { coverSVG } from './covers.js';
-import { esc, icon, logo, shortDate, numDate, longDate, daysLeft } from './ui.js';
+import { esc, icon, logo, logoSub, numDate, longDate, daysLeft } from './ui.js';
 import { getState, bookState, percent, setSort, resetAll, markOpened } from './state.js';
 import { bindPeek, bindKickerToggle, onLongPress } from './secret.js';
 
@@ -38,7 +38,7 @@ function header({ title, back, big } = {}) {
   if (big) {
     return `
       <header class="hdr hdr-big">
-        <div class="brand" id="brand">${logo()}<span class="hdr-sub">Bibliotekernes ebøger og lydbøger</span><span class="peek-slot" id="peekSlot"></span></div>
+        <div class="brand" id="brand">${logo()}${logoSub()}<span class="peek-slot" id="peekSlot"></span></div>
       </header>`;
   }
   return `
