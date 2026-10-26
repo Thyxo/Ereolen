@@ -205,7 +205,15 @@ window.addEventListener('popstate', route);
 // iOS-hjemmeskærm: CSS-højderne (100%, 100vh, lvh) kan være for lave med
 // gennemsigtig statusbar. Brug telefonens målte højde til html, body og appen.
 function fitHeight() {
-  const h = Math.max(window.innerHeight, document.documentElement.clientHeight);
+  let h = Math.max(window.innerHeight, document.documentElement.clientHeight);
+  // På hjemmeskærmen melder iOS en for lav højde (minus statusbaren).
+  // Brug i stedet skærmens rigtige højde (appen kører kun i portræt).
+  const standalone = navigator.standalone === true || window.matchMedia?.('(display-mode: standalone)').matches;
+  if (standalone && window.screen?.height) {
+    const portrait = window.innerHeight >= window.innerWidth;
+    const full = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+    if (full > h) h = full;
+  }
   document.documentElement.style.setProperty('--app-h', `${h}px`);
 }
 window.addEventListener('resize', fitHeight);

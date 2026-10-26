@@ -1,6 +1,6 @@
 // Service worker: alt til læsning ligger i cachen, så appen virker offline.
 // Netværk først (altid nyeste version), cache som reserve.
-const CACHE = 'ereolen-v8';
+const CACHE = 'ereolen-v9';
 const ASSETS = [
   '/',
   '/index.html',
