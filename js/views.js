@@ -130,8 +130,8 @@ const byId = (id) => BOOKS.find((b) => b.id === id);
 // ---------- Forside ----------
 export function renderHome(el) {
   const featured = byId('snedronningen');
-  const rowA = ['fyrtojet', 'nattergalen', 'tommelise', 'snedronningen', 'grantraeet', 'klods-hans', 'ole-lukoje', 'prinsessen-paa-aerten'];
-  const rowB = ['elverhoj', 'rejsekammeraten', 'dyndkongens-datter', 'anne-lisbeth', 'ib-og-lille-christine', 'hyrdinden-og-skorstensfejeren', 'bedstemoder', 'vanddraaben', 'lille-claus-og-store-claus'];
+  const rowA = ['fyrtojet', 'nattergalen', 'tommelise', 'snedronningen', 'grantraeet'];
+  const rowB = ['klods-hans', 'ole-lukoje', 'prinsessen-paa-aerten', 'lille-claus-og-store-claus', 'snedronningen'];
   const carousel = (ids) => `<div class="carousel">${ids.map(byId).filter(Boolean).map((b) => `
       <a class="c-item" href="/bog/${b.id}" data-link>
         <div class="cover">${coverSVG(b)}</div>
@@ -170,15 +170,15 @@ export function renderHome(el) {
 
 // ---------- Søg ----------
 export const CATEGORIES = [
-  { slug: 'efteraaret', title: 'Bøger til efteråret', color: '#86989c', books: ['grantraeet', 'ole-lukoje', 'nattergalen', 'elverhoj'] },
+  { slug: 'efteraaret', title: 'Bøger til efteråret', color: '#86989c', books: ['grantraeet', 'ole-lukoje', 'nattergalen', 'tommelise'] },
   { slug: 'altid', title: 'Bøger, du altid kan låne', color: '#2d3d4b', books: ['fyrtojet', 'snedronningen', 'klods-hans', 'tommelise'] },
-  { slug: 'lydboeger', title: 'Lydbøger', color: '#d76a60', books: ['bedstemoder', 'vanddraaben', 'anne-lisbeth', 'rejsekammeraten'] },
-  { slug: 'podcasts', title: 'Podcasts', color: '#000000', books: ['dyndkongens-datter', 'nattergalen', 'elverhoj', 'fyrtojet'] },
-  { slug: 'lette', title: 'Lette bøger til voksne', color: '#434e59', books: ['prinsessen-paa-aerten', 'klods-hans', 'vanddraaben', 'bedstemoder'] },
-  { slug: 'krimi', title: 'Krimi og spænding', color: '#7d726f', books: ['lille-claus-og-store-claus', 'fyrtojet', 'rejsekammeraten', 'anne-lisbeth'] },
+  { slug: 'lydboeger', title: 'Lydbøger', color: '#d76a60', books: ['nattergalen', 'grantraeet', 'ole-lukoje', 'fyrtojet'] },
+  { slug: 'podcasts', title: 'Podcasts', color: '#000000', books: ['snedronningen', 'nattergalen', 'klods-hans', 'fyrtojet'] },
+  { slug: 'lette', title: 'Lette bøger til voksne', color: '#434e59', books: ['prinsessen-paa-aerten', 'klods-hans', 'ole-lukoje', 'tommelise'] },
+  { slug: 'krimi', title: 'Krimi og spænding', color: '#7d726f', books: ['lille-claus-og-store-claus', 'fyrtojet', 'snedronningen', 'nattergalen'] },
   { slug: 'boern', title: 'Børn', color: '#1b222f', books: ['tommelise', 'prinsessen-paa-aerten', 'ole-lukoje', 'snedronningen'] },
-  { slug: 'engelsk', title: 'Bøger på engelsk', color: '#86989c', books: ['ib-og-lille-christine', 'hyrdinden-og-skorstensfejeren', 'grantraeet', 'nattergalen'] },
-  { slug: 'sprog', title: 'Bøger på andre sprog', color: '#2d3d4b', books: ['elverhoj', 'dyndkongens-datter', 'tommelise', 'snedronningen'] },
+  { slug: 'engelsk', title: 'Bøger på engelsk', color: '#86989c', books: ['grantraeet', 'nattergalen', 'klods-hans', 'lille-claus-og-store-claus'] },
+  { slug: 'sprog', title: 'Bøger på andre sprog', color: '#2d3d4b', books: ['ole-lukoje', 'snedronningen', 'tommelise', 'fyrtojet'] },
 ];
 
 export function renderSearch(el) {
@@ -303,7 +303,7 @@ export function renderSimpleList(el, kind) {
   }[kind];
   let inner;
   if (kind === 'historik') {
-    const old = ['fyrtojet', 'klods-hans', 'hyrdinden-og-skorstensfejeren', 'prinsessen-paa-aerten'].map(byId).filter(Boolean);
+    const old = ['fyrtojet', 'klods-hans', 'prinsessen-paa-aerten'].map(byId).filter(Boolean);
     inner = `<ul class="loans">${old.map((b) => `
       <li><a class="loan" href="/bog/${b.id}" data-link><div class="cover">${coverSVG(b)}</div>
       <div class="meta"><h3>${esc(b.title)}</h3><p class="author">${esc(b.author)}</p>

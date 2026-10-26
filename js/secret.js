@@ -34,18 +34,7 @@ export function kickerParagraph(book) {
   if (!getState().kicker) return null;
   const w = wordForLetter(book.letter);
   if (!w) return null;
-  return `Til denne udgave har redaktionen udvalgt ét gammelt ord, som vi håber, du vil tænke på, mens du læser: »${w.word}«.`;
-}
-
-// Glossar-ordene for en skærmside. Mode 1 bruger altid ownModeSet;
-// rækkefølgen (order) beregnes af læseren, så ingen to sider er ens.
-export function glossaryWords(order) {
-  const set = words.sets[words.ownModeSet];
-  return order.map((i) => set.words[i]);
-}
-
-export function glossaryTitle() {
-  return words.title;
+  return `I denne udgave er der ét ord, vi håber, du vil tænke på, mens du læser: »${w.word.toLowerCase()}«.`;
 }
 
 // ---------- gestus ----------

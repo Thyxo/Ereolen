@@ -2,7 +2,7 @@
 // rigtig e-bogslæser). Swipe eller tryk i siderne for at bladre.
 import { esc } from './ui.js';
 import { getState, bookState, setPosition, markOpened, toggleBookmark, updateSettings } from './state.js';
-import { glossaryWords, glossaryTitle, kickerParagraph, bindPeek } from './secret.js';
+import { kickerParagraph, bindPeek } from './secret.js';
 import { buildFlow, pieceStart, segStarts } from './flow.js';
 
 const FONTS = [
@@ -23,43 +23,6 @@ const mi = (name, cls = '') => `<i class="ico ${cls}" style="--m:url(/icons/ui/$
 
 let active = null; // { el, cleanup }
 
-// ---------- små hjælpere ----------
-function hash(str) {
-  let h = 2166136261;
-  for (const c of str) h = Math.imul(h ^ c.codePointAt(0), 16777619);
-  return h >>> 0;
-}
-function rng(seed) {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-// Rækkefølge af de 8 ord for hver side: ny på hver side, og intet ord står
-// samme sted som på siden før.
-function orders(bookId, n) {
-  const rand = rng(hash(bookId));
-  const out = [];
-  let prev = null;
-  for (let k = 0; k < n; k++) {
-    let o;
-    do {
-      o = [0, 1, 2, 3, 4, 5, 6, 7];
-      for (let i = 7; i > 0; i--) {
-        const j = Math.floor(rand() * (i + 1));
-        [o[i], o[j]] = [o[j], o[i]];
-      }
-    } while (prev && o.some((v, i) => v === prev[i]));
-    out.push(o);
-    prev = o;
-  }
-  return out;
-}
-
 function pieceHTML(flow, it) {
   const b = flow[it.i];
   switch (b.t) {
@@ -75,15 +38,6 @@ function pieceHTML(flow, it) {
       return `<p class="${it.from > 0 || b.noind ? 'noind' : ''}">${esc(text)}</p>`;
     }
   }
-}
-
-function glossHTML(order) {
-  const items = glossaryWords(order);
-  return `
-    <aside class="gloss">
-      <h4>${esc(glossaryTitle())}</h4>
-      <ul>${items.map((w) => `<li><b>${esc(w.word)}</b> – ${esc(w.explanation.charAt(0).toLowerCase() + w.explanation.slice(1))}</li>`).join('')}</ul>
-    </aside>`;
 }
 
 // Deler strømmen op i skærmsider ved at måle i et skjult element.
@@ -109,8 +63,14 @@ function paginate(flow, m, H) {
     }
   };
 
+  let seg = flow[0]?.seg;
   for (let i = 0; i < flow.length; i++) {
     const b = flow[i];
+    // hver skrevet side begynder på en ny skærm
+    if (b.seg !== seg) {
+      if (cur.length) flush();
+      seg = b.seg;
+    }
     if (b.t !== 'p') {
       if (b.t === 'sep' && !cur.length) continue;
       const el = add({ i });
@@ -205,7 +165,6 @@ export function openReader(root, book, startIndex, onClose) {
 
   let flow = [];
   let pages = [];
-  let ords = [];
   let cur = 0;
   let pos = null; // tegn-position, der skal bevares ved ny opdeling
 
@@ -215,19 +174,13 @@ export function openReader(root, book, startIndex, onClose) {
   }
 
   function layout() {
-    const s = getState().settings;
     flow = buildFlow(book, kickerParagraph(book));
-    // mål ordboksen og den plads, teksten har
+    // den plads, teksten har på én skærm
     measure.style.width = `${pager.clientWidth}px`;
     mText.innerHTML = '';
-    measure.insertAdjacentHTML('beforeend', glossHTML([0, 1, 2, 3, 4, 5, 6, 7]));
-    const g = measure.querySelector('.gloss');
-    const padTop = 8;
-    const H = Math.floor(pager.clientHeight - padTop - g.offsetHeight - 6);
-    g.remove();
-    el.style.setProperty('--th', `${Math.max(H, 120)}px`);
-    pages = paginate(flow, mText, Math.max(H, 120));
-    ords = orders(book.id + s.fontSize + s.font, pages.length);
+    const H = Math.max(120, Math.floor(pager.clientHeight - 8 - 10));
+    el.style.setProperty('--th', `${H}px`);
+    pages = paginate(flow, mText, H);
     if (pos != null) {
       cur = 0;
       for (let k = 0; k < pages.length; k++) if (pages[k].start <= pos) cur = k;
@@ -243,7 +196,7 @@ export function openReader(root, book, startIndex, onClose) {
     const end = pages[k + 1] ? pages[k + 1].start : Infinity;
     const marked = bookState(book.id).bookmarks.some((x) => x >= p.start && x < end);
     return `<div class="pg-text">${p.items.map((it) => pieceHTML(flow, it)).join('')}</div>
-      ${glossHTML(ords[k])}<span class="ribbon ${marked ? 'show' : ''}"></span>`;
+      <span class="ribbon ${marked ? 'show' : ''}"></span>`;
   }
 
   function isMarked(k) {

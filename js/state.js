@@ -2,26 +2,20 @@
 // Alt ligger kun i telefonens localStorage.
 import { segStarts } from './flow.js';
 
-const KEY = 'ereolen:v2';
+const KEY = 'ereolen:v3';
 const DAY = 86400000;
 
 // Startværdier, så hylden ser "brugt" ud (andel læst).
 const SEED_PROGRESS = {
-  // Bøgerne til ordsættets bogstaver (B D F K L N R T) er enten ulæste eller
-  // færdiglæste, så »Læs« altid åbner på forordet (kickeren).
+  // De 8 »ord-bøger« (F G K L N P S T) er enten ulæste eller færdiglæste, så
+  // »Læs« / »Læs igen« altid åbner på forordet (kickeren). Ole Lukøje er i gang.
   'fyrtojet': 1,
   'klods-hans': 1,
-  'snedronningen': 0.42,
-  'elverhoj': 0.71,
-  'grantraeet': 0.27,
-  'ole-lukoje': 0.08,
-  'ib-og-lille-christine': 0.33,
-  'hyrdinden-og-skorstensfejeren': 1,
   'prinsessen-paa-aerten': 1,
-  'anne-lisbeth': 0.15,
+  'ole-lukoje': 0.38,
 };
 const LOAN_DAYS = [26, 4, 13, 27, 9, 18, 22, 5, 29, 13, 10, 18, 26, 23, 14, 29, 9];
-const BOOKMARKS = { 'snedronningen': [12], 'elverhoj': [5], 'grantraeet': [3] };
+const BOOKMARKS = { 'ole-lukoje': [3] };
 
 let state = null;
 let books = [];

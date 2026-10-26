@@ -40,10 +40,7 @@ export function buildFlow(book, kicker) {
       flow.push({ t: 'sec', x: 'Forord', seg, off });
       afterHead = true;
     }
-    if (seg === book.forordPages) {
-      flow.push({ t: 'title', x: book.title, seg, off }, { t: 'by', x: 'af H.C. Andersen', seg, off });
-      afterHead = true;
-    }
+    if (seg === book.forordPages) afterHead = true;
     for (const b of pg.blocks) {
       if (b.h) {
         flow.push({ t: 'h', x: b.h, seg, off });

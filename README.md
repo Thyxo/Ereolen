@@ -1,31 +1,37 @@
 # eReolen – e-bogsapp til mentalisme-akt
 
-En PWA (mobil først) med 17 af H.C. Andersens eventyr. Den ser ud som en almindelig dansk biblioteks-e-bogsapp og bruges som rekvisit i en mentalisme-akt.
+En PWA (mobil først) med 9 af H.C. Andersens mest kendte eventyr. Den ser ud som en almindelig dansk biblioteks-e-bogsapp og bruges som rekvisit i en mentalisme-akt.
 
 **Mode 1 (bygget): din egen telefon.** Mode 2 (tilskuerens telefon med live performer-side `/p`) kommer senere.
 
 ## Effekten (mode 1)
 
 1. Giv tilskueren telefonen. Lad dem gå til **Læs/lyt**, åbne en bog og bladre til en tilfældig side.
-2. Nederst på hver side står fodnoten **»Gamle ord forklaret«** med 8 ord. Tilskueren vælger ét ord i tankerne.
-3. Bed tilskueren gå tilbage til **Læs/lyt** (eller **Min side → Lån**) og åbne den bog, hvis titel starter med samme bogstav som ordet.
-4. Du kender nu ordet. Se titlen, spørg om den eller brug den skjulte peek (se nedenfor).
+2. Bed dem vælge **et langt ord på siden (mindst 10 bogstaver)** og huske det.
+3. Bed dem gå tilbage og åbne den bog, hvis titel starter med samme bogstav som ordet.
+4. Du kender nu ordet: se titlen, spørg om den, eller brug den skjulte peek (se nedenfor).
 5. Kicker (valgfri): tilskueren åbner forordet i bogen. Dér står deres ord.
+
+### Hemmeligheden
+
+Teksterne er omskrevet, så **hver side indeholder præcis de samme 8 lange ord** (10+ bogstaver), flettet diskret ind i eventyret og i ny rækkefølge på hver side. **Alle andre ord har højst 9 bogstaver.** Uanset hvilken side og hvilket langt ord tilskueren vælger, er det ét af de 8.
+
+`scripts/check-pages.mjs` kontrollerer det for hver eneste side, og `build-data.mjs` nægter at bygge, hvis en side bryder reglen.
 
 ### De 8 ord, du skal huske
 
-| Bogstav | Bog | Ord |
+| Bogstav | Bog | Ord (kan stå bøjet på siden) |
 |---|---|---|
-| B | Bedstemoder | **Bondestue** |
-| D | Dyndkongens Datter | **Dragkiste** |
-| F | Fyrtøjet | **Forvalter** |
-| K | Klods-Hans | **Kakkelovn** |
-| L | Lille Claus og store Claus | **Lirekasse** |
+| F | Fyrtøjet | **Forunderlig** |
+| G | Grantræet | **Glædestrålende** |
+| K | Klods-Hans | **Kirkeklokke** |
+| L | Lille Claus og store Claus | **Lommetørklæde** |
 | N | Nattergalen | **Nattevægter** |
-| R | Rejsekammeraten | **Rendesten** |
+| P | Prinsessen paa Ærten | **Pengepung(en)** |
+| S | Snedronningen | **Sommerfugl** |
 | T | Tommelise | **Tjenestepige** |
 
-De samme 8 ord står på alle sider, men i en ny rækkefølge på hver side. Ingen to sider i samme bog har samme rækkefølge.
+*Ole Lukøje* har intet ord – den er god som første bog, tilskueren bladrer i.
 
 ### Skjulte funktioner
 
@@ -38,7 +44,7 @@ De samme 8 ord står på alle sider, men i en ny rækkefølge på hver side. Ing
 | **Langt tryk (3 sek.) på »Indstillinger«** på Min side | Nulstiller alt: læsefremskridt, bogmærker, kicker og »senest åbnet«. Gør det før hvert show. |
 
 Når kickeren er slået til, får forordet i hver af de 8 bøger et ekstra afsnit:
-*»Til denne udgave har redaktionen udvalgt ét gammelt ord, som vi håber, du vil tænke på, mens du læser: »Forvalter«.«*
+*»I denne udgave er der ét ord, vi håber, du vil tænke på, mens du læser: »nattevægter«.«*
 
 De 8 bøger er enten ulæste eller færdiglæste, så »Læs« / »Læs igen« altid åbner på forordet.
 
@@ -52,7 +58,7 @@ De 8 bøger er enten ulæste eller færdiglæste, så »Læs« / »Læs igen« a
 
 - Ren HTML/CSS/JS uden byggetrin. Hostes statisk på Vercel.
 - Bygget som en app: faste faner (holdes i hukommelsen), undersider glider ind, læseren glider op. Dokumentet scroller aldrig – kun indholdet.
-- Læseren deler teksten op, så hver side fylder præcis én skærm (afhænger af skriftstørrelse). Position og bogmærker gemmes som tegn-position, så de passer efter skift af skrift.
+- Læseren viser én skrevet side pr. skærm (deles kun, hvis skriften gøres meget stor). Position og bogmærker gemmes som tegn-position, så de passer efter skift af skrift.
 - Logo, faneikoner og læserens ikoner er klippet ud af skærmbilleder af den rigtige app (`icons/ui`).
 - Design efter den rigtige eReolen-app: rød header, faner Forside/Søg/Læs/lyt/Min side/Mere, skrifttypen Source Sans 3 (lokalt i `fonts/`).
 - Service worker (`sw.js`) cacher alt, så læsningen virker offline.
@@ -63,22 +69,24 @@ De 8 bøger er enten ulæste eller færdiglæste, så »Læs« / »Læs igen« a
 | Fil | Indhold |
 |---|---|
 | `data/books.json` | Titler, sider og tekst (genereres) |
-| `data/words.json` | 4 ordsæt × 8 ord med antal bogstaver og forklaring. `ownModeSet` = sættet til mode 1 |
-| `data/pageSets.json` | For hver side: ordsæt (til mode 2) og rækkefølge af de 8 ord (genereres) |
-| `content/*.txt` | Kilde: metadata, forord og eventyrtekst |
+| `data/words.json` | De 8 ord med tilladte bøjningsformer og `minLong` (10) |
+| `data/pageSets.json` | For hver side: hvilket ordsæt den hører til (genereres) |
+| `content/*.txt` | Kilde: metadata, forord og de omskrevne sider (adskilt af `---`) |
+| `content/original/` | De originale tekster fra andersenstories.com |
+| `content/arkiv/` | De 8 eventyr, der er taget ud |
 
 ### Opdatér tekster og data
 
 ```bash
-python3 scripts/fetch_texts.py      # henter eventyrteksterne fra andersenstories.com til content/
-node scripts/build-data.mjs         # bygger books.json og pageSets.json, validerer ordsættene
+node scripts/check-pages.mjs        # tjekker at alle sider kun har de 8 lange ord
+node scripts/build-data.mjs         # bygger books.json og pageSets.json (stopper ved fejl)
 ```
 
-`build-data.mjs` stopper med en fejl, hvis to ord i et sæt har samme forbogstav, eller hvis et ord ikke har en titel med samme forbogstav.
+`build-data.mjs` stopper også, hvis to ord har samme forbogstav, eller hvis et ord ikke har en titel med samme forbogstav.
 
 ### Ruter
 
-`/` Forside · `/soeg` Søg · `/liste/:kategori` liste · `/laes-lyt` Læs/lyt (alle 17 lån) · `/min-side` Min side · `/min-side/laan` Lån · `/mere` Mere · `/bog/:id` bogside · `/bog/:id/laes?side=N` læser
+`/` Forside · `/soeg` Søg · `/liste/:kategori` liste · `/laes-lyt` Læs/lyt (alle lån) · `/min-side` Min side · `/min-side/laan` Lån · `/mere` Mere · `/bog/:id` bogside · `/bog/:id/laes?side=N` læser
 
 ## Næste skridt (mode 2)
 
