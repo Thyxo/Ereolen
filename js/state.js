@@ -1,6 +1,8 @@
 // Lokal tilstand: læsefremskridt, lån, bogmærker, indstillinger.
 // Alt ligger kun i telefonens localStorage.
-const KEY = 'ereolen:v1';
+import { segStarts } from './flow.js';
+
+const KEY = 'ereolen:v2';
 const DAY = 86400000;
 
 // Startværdier, så hylden ser "brugt" ud (andel læst).
@@ -34,7 +36,7 @@ function fresh() {
   const now = today0();
   const s = {
     seededAt: now,
-    settings: { fontSize: 19, font: 'serif', theme: 'light' },
+    settings: { fontSize: 17, font: 'times', theme: 'light' },
     kicker: false,
     lastOpenedId: null,
     sort: 'title',
@@ -42,13 +44,17 @@ function fresh() {
   };
   books.forEach((b, i) => {
     const p = SEED_PROGRESS[b.id] || 0;
+    const starts = segStarts(b);
+    const page = Math.round(p * (b.pages.length - 1));
     s.books[b.id] = {
-      page: Math.round(p * (b.pages.length - 1)),
+      page,
+      pos: starts[page],
       started: p > 0,
       loanedAt: now - (30 - LOAN_DAYS[i % LOAN_DAYS.length]) * DAY,
       dueAt: now + LOAN_DAYS[i % LOAN_DAYS.length] * DAY,
       lastOpened: p > 0 ? now - (i + 1) * 3.7 * 3600000 : 0,
-      bookmarks: (BOOKMARKS[b.id] || []).filter((n) => n < b.pages.length),
+      // bogmærker gemmes som tegn-positioner i bogen
+      bookmarks: (BOOKMARKS[b.id] || []).filter((n) => n < b.pages.length).map((n) => starts[n]),
     };
   });
   return s;
@@ -88,9 +94,11 @@ export function bookState(id) {
   return state.books[id];
 }
 
-export function setPage(id, page) {
+// page = datasegment (bruges til % på listerne), pos = tegn-position
+export function setPosition(id, page, pos) {
   const b = state.books[id];
   b.page = page;
+  b.pos = pos;
   b.started = true;
   save();
 }
@@ -101,14 +109,14 @@ export function markOpened(id) {
   save();
 }
 
-export function toggleBookmark(id, page) {
-  const list = state.books[id].bookmarks;
-  const i = list.indexOf(page);
-  if (i >= 0) list.splice(i, 1);
-  else list.push(page);
-  list.sort((a, b) => a - b);
+// Bogmærke for en skærmside [start, end). Fjerner, hvis der allerede er et.
+export function toggleBookmark(id, start, end) {
+  const b = state.books[id];
+  const inside = b.bookmarks.filter((x) => x >= start && x < end);
+  if (inside.length) b.bookmarks = b.bookmarks.filter((x) => !(x >= start && x < end));
+  else b.bookmarks = [...b.bookmarks, start].sort((x, y) => x - y);
   save();
-  return i < 0;
+  return !inside.length;
 }
 
 export function updateSettings(patch) {

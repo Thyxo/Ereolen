@@ -37,11 +37,11 @@ export function kickerParagraph(book) {
   return `Til denne udgave har redaktionen udvalgt ét gammelt ord, som vi håber, du vil tænke på, mens du læser: »${w.word}«.`;
 }
 
-// Glossar-ordene for en side: (sæt, rækkefølge). Mode 1 bruger altid ownModeSet.
-export function glossaryFor(pageSets, bookId, pageIndex) {
-  const entry = pageSets.books[bookId][pageIndex];
-  const set = words.sets[pageSets.ownModeSet];
-  return entry.order.map((i) => set.words[i]);
+// Glossar-ordene for en skærmside. Mode 1 bruger altid ownModeSet;
+// rækkefølgen (order) beregnes af læseren, så ingen to sider er ens.
+export function glossaryWords(order) {
+  const set = words.sets[words.ownModeSet];
+  return order.map((i) => set.words[i]);
 }
 
 export function glossaryTitle() {

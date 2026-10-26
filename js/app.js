@@ -1,16 +1,35 @@
-// Opstart og routing.
+// Opstart og navigation, bygget som en app:
+//  - fanerne tegnes én gang og holdes i live (ingen genindlæsning ved fanebyt)
+//  - undersider glider ind fra højre og ud igen
+//  - læseren glider op nedefra
 import { initState } from './state.js';
 import { initSecret } from './secret.js';
 import {
-  initViews, renderBook, renderHome, renderSearch, renderReadListen, renderMyPage, renderLoans, renderSimpleList, renderMore,
+  initViews, renderTabbar, renderBook, renderHome, renderSearch, renderReadListen, renderMyPage, renderLoans,
+  renderSimpleList, renderMore, renderList, openedBook,
 } from './views.js';
-import { renderReader, closeReader } from './reader.js';
+import { openReader, closeReader, readerOpen } from './reader.js';
 
 const app = document.getElementById('app');
+app.innerHTML = '<div id="views"></div><div id="stack"></div><nav id="tabbar" class="tabbar"></nav><div id="reader-root"></div>';
+const viewsEl = document.getElementById('views');
+const stackEl = document.getElementById('stack');
+const tabbarEl = document.getElementById('tabbar');
+const readerRoot = document.getElementById('reader-root');
+
 let BOOKS = [];
-let PAGESETS = null;
-const scrollMemory = {};
-let currentPath = null;
+const tabViews = {};       // sti -> element
+let activeTab = null;
+const stack = [];          // [{ path, el, render }]
+let booted = false;
+
+const TAB_RENDER = {
+  '/': renderHome,
+  '/soeg': renderSearch,
+  '/laes-lyt': renderReadListen,
+  '/min-side': renderMyPage,
+  '/mere': renderMore,
+};
 
 async function load(url) {
   const r = await fetch(url);
@@ -18,75 +37,187 @@ async function load(url) {
   return r.json();
 }
 
-function navigate(href, replace = false) {
-  scrollMemory[location.pathname] = window.scrollY;
-  if (replace) history.replaceState(null, '', href);
-  else history.pushState(null, '', href);
+function parse(path) {
+  const p = path.replace(/\/+$/, '') || '/';
+  const parts = p.split('/').filter(Boolean);
+  if (parts[0] === 'bog' && parts[1] && parts[2] === 'laes') return { reader: parts[1], base: `/bog/${parts[1]}` };
+  if (parts[0] === 'laes' && parts[1]) return { redirect: `/bog/${parts[1]}/laes` };
+  if (parts[0] === 'bog' && parts[1]) return { push: p, kind: 'book', id: parts[1] };
+  if (parts[0] === 'liste' && parts[1]) return { push: p, kind: 'list', slug: parts[1] };
+  if (parts[0] === 'min-side' && parts[1]) return { push: p, kind: parts[1], tab: '/min-side' };
+  if (TAB_RENDER[p]) return { tab: p };
+  return { tab: '/' };
+}
+
+// ---------- faner ----------
+function showTab(path) {
+  if (!tabViews[path]) {
+    const el = document.createElement('section');
+    el.className = 'view tab-view';
+    viewsEl.appendChild(el);
+    TAB_RENDER[path](el);
+    el._render = () => TAB_RENDER[path](el);
+    tabViews[path] = el;
+  }
+  if (activeTab !== path) {
+    Object.entries(tabViews).forEach(([k, el]) => el.classList.toggle('active', k === path));
+    tabbarEl.querySelectorAll('.tab').forEach((a) => a.classList.toggle('on', a.dataset.tab === path));
+    activeTab = path;
+  }
+}
+
+// ---------- undersider ----------
+function renderPushed(el, info) {
+  if (info.kind === 'book') {
+    const book = BOOKS.find((b) => b.id === info.id);
+    if (!book) return false;
+    renderBook(el, book);
+  } else if (info.kind === 'list') renderList(el, info.slug);
+  else if (info.kind === 'laan') renderLoans(el);
+  else if (['reserveringer', 'huskeliste', 'historik'].includes(info.kind)) renderSimpleList(el, info.kind);
+  else return false;
+  return true;
+}
+
+function push(info, animate) {
+  const el = document.createElement('section');
+  el.className = 'view pushed';
+  if (!renderPushed(el, info)) return;
+  if (info.kind === 'book') openedBook(BOOKS.find((b) => b.id === info.id));
+  el._render = () => renderPushed(el, info);
+  stack.push({ path: info.push, el });
+  if (animate) el.classList.add('enter');
+  stackEl.appendChild(el);
+  stack[stack.length - 2]?.el.classList.add('behind');
+  if (!stack[stack.length - 2]) viewsEl.classList.add('behind');
+  if (animate) {
+    el.getBoundingClientRect();
+    el.classList.remove('enter');
+  }
+}
+
+function popTo(index, animate) {
+  // fjern alle sider over index (index -1 = tilbage til fanen)
+  while (stack.length - 1 > index) {
+    const { el } = stack.pop();
+    if (animate) {
+      el.classList.add('leave');
+      setTimeout(() => el.remove(), 340);
+    } else el.remove();
+  }
+  const top = stack[stack.length - 1];
+  if (top) top.el.classList.remove('behind');
+  else viewsEl.classList.remove('behind');
+}
+
+// ---------- routing ----------
+function route() {
+  const url = new URL(location.href);
+  const info = parse(url.pathname);
+  const animate = booted;
+
+  if (info.redirect) {
+    history.replaceState(history.state, '', info.redirect + url.search);
+    return route();
+  }
+
+  if (info.reader) {
+    const book = BOOKS.find((b) => b.id === info.reader);
+    if (!book) return go('/', true);
+    // sørg for at bogsiden ligger under læseren
+    if (!stack.length || stack[stack.length - 1].path !== info.base) {
+      showTab(activeTab || '/');
+      if (!stack.some((s) => s.path === info.base)) push(parse(info.base), false);
+    }
+    if (!readerOpen()) {
+      const side = Number(url.searchParams.get('side'));
+      openReader(readerRoot, book, side ? side - 1 : null, () => {
+        if (history.state?.fromApp) history.back();
+        else go(info.base);
+      });
+    }
+    return;
+  }
+
+  if (readerOpen()) {
+    closeReader();
+    refreshAll();
+  }
+
+  if (info.push) {
+    const tab = info.tab || activeTab || '/';
+    if (tab !== activeTab) {
+      popTo(-1, false);
+      showTab(tab);
+    }
+    const idx = stack.findIndex((s) => s.path === info.push);
+    if (idx >= 0) popTo(idx, animate);
+    else push(info, animate);
+  } else {
+    if (info.tab !== activeTab) {
+      popTo(-1, false);
+      showTab(info.tab);
+    } else {
+      popTo(-1, animate);
+    }
+  }
+  booted = true;
+}
+
+function go(href, replace = false) {
+  if (replace) history.replaceState({ fromApp: true }, '', href);
+  else history.pushState({ fromApp: true }, '', href);
   route();
 }
 
-function route() {
-  const url = new URL(location.href);
-  const path = url.pathname.replace(/\/+$/, '') || '/';
-  const parts = path.split('/').filter(Boolean);
-  const reading = parts[0] === 'bog' && parts[2] === 'laes';
-  if (!reading) closeReader();
-
-  // gamle adresser
-  if (parts[0] === 'laes' && parts[1]) return navigate(`/bog/${parts[1]}/laes${url.search}`, true);
-
-  if (parts[0] === 'bog' && parts[1]) {
-    const book = BOOKS.find((b) => b.id === parts[1]);
-    if (!book) return navigate('/', true);
-    if (reading) {
-      const side = Number(url.searchParams.get('side'));
-      renderReader(app, book, PAGESETS, side ? side - 1 : undefined, () => {
-        // Tilbage til bogsiden (eller dertil, hvis man kom direkte)
-        if (history.state?.fromApp) history.back();
-        else navigate(`/bog/${book.id}`);
-      });
-    } else {
-      renderBook(app, book);
-    }
-  } else if (parts[0] === 'soeg') renderSearch(app);
-  else if (parts[0] === 'laes-lyt') renderReadListen(app);
-  else if (parts[0] === 'min-side' && parts[1] === 'laan') renderLoans(app);
-  else if (parts[0] === 'min-side' && ['reserveringer', 'huskeliste', 'historik'].includes(parts[1])) renderSimpleList(app, parts[1]);
-  else if (parts[0] === 'min-side') renderMyPage(app);
-  else if (parts[0] === 'mere') renderMore(app);
-  else renderHome(app);
-
-  const same = currentPath === path;
-  currentPath = path;
-  if (!same) window.scrollTo(0, scrollMemory[path] || 0);
+// Opdater sider, der viser læsefremskridt (fx efter læsning eller nulstilling)
+function refreshAll() {
+  ['/', '/laes-lyt'].forEach((k) => tabViews[k]?._render?.());
+  stack.forEach((s) => s.el._render?.());
 }
+window.addEventListener('ereolen:refresh', refreshAll);
 
 document.addEventListener('click', (e) => {
+  const tab = e.target.closest('a[data-tab]');
+  if (tab) {
+    e.preventDefault();
+    const path = tab.dataset.tab;
+    if (path === activeTab && stack.length) go(path); // tryk på aktiv fane = tilbage til toppen
+    else if (path === activeTab) tabViews[path]?.querySelector('.scroll')?.scrollTo({ top: 0, behavior: 'smooth' });
+    else go(path);
+    return;
+  }
   const a = e.target.closest('a[data-link]');
   if (!a || e.metaKey || e.ctrlKey) return;
   e.preventDefault();
-  if (a.hasAttribute('data-back') && history.length > 1 && history.state?.fromApp) {
-    history.back();
+  if (a.hasAttribute('data-back')) {
+    if (history.state?.fromApp) history.back();
+    else {
+      const top = stack.length > 1 ? stack[stack.length - 2].path : activeTab || '/';
+      go(top, true);
+    }
     return;
   }
-  scrollMemory[location.pathname] = window.scrollY;
-  history.pushState({ fromApp: true }, '', a.getAttribute('href'));
-  route();
+  go(a.getAttribute('href'));
 });
 window.addEventListener('popstate', route);
 
+// Forhindr zoom med to fingre og dobbelttryk (føles som en app)
+document.addEventListener('gesturestart', (e) => e.preventDefault());
+document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
+
 async function boot() {
   try {
-    const [booksData, words, pageSets] = await Promise.all([
-      load('/data/books.json'),
-      load('/data/words.json'),
-      load('/data/pageSets.json'),
-    ]);
+    const [booksData, words] = await Promise.all([load('/data/books.json'), load('/data/words.json')]);
     BOOKS = booksData.books;
-    PAGESETS = pageSets;
     initState(BOOKS);
     initSecret(words, BOOKS);
     initViews(BOOKS);
+    renderTabbar(tabbarEl);
+    // forvarm ikonerne, så de ikke blinker første gang
+    ['tab-home', 'tab-home-on', 'tab-search', 'tab-play', 'tab-user', 'tab-user-on', 'tab-menu', 'ebook', 'chevron-right',
+      'r-close', 'r-aa', 'r-toc', 'r-bookmark', 'r-bookmark-on', 'mp-loans', 'mp-reserve', 'mp-heart', 'mp-history', 'gear',
+      'chevron-down', 'search-white', 'logo', 'logo-sub'].forEach((n) => { new Image().src = `/icons/ui/${n}.png`; });
     route();
   } catch (err) {
     app.innerHTML = `<div class="boot-error"><p>Der opstod en fejl. Tjek din forbindelse og prøv igen.</p><button onclick="location.reload()">Prøv igen</button></div>`;

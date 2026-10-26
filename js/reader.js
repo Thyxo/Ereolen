@@ -1,10 +1,13 @@
-// Læseskærmen: swipe for at bladre, skrift/tema, bogmærker, indhold.
-import { esc, icon } from './ui.js';
-import { getState, bookState, setPage, markOpened, toggleBookmark, updateSettings, percent } from './state.js';
-import { glossaryFor, glossaryTitle, kickerParagraph, bindPeek } from './secret.js';
+// Læseren: teksten deles op, så hver side fylder præcis én skærm (som i en
+// rigtig e-bogslæser). Swipe eller tryk i siderne for at bladre.
+import { esc } from './ui.js';
+import { getState, bookState, setPosition, markOpened, toggleBookmark, updateSettings } from './state.js';
+import { glossaryWords, glossaryTitle, kickerParagraph, bindPeek } from './secret.js';
+import { buildFlow, pieceStart, segStarts } from './flow.js';
 
 const FONTS = [
-  { id: 'serif', label: 'Georgia' },
+  { id: 'times', label: 'Times' },
+  { id: 'georgia', label: 'Georgia' },
   { id: 'palatino', label: 'Palatino' },
   { id: 'sans', label: 'System' },
 ];
@@ -13,160 +16,299 @@ const THEMES = [
   { id: 'sepia', label: 'Sepia' },
   { id: 'dark', label: 'Mørk' },
 ];
-const SIZES = [15, 16, 17, 19, 21, 23, 26];
+const SIZES = [14, 15, 16, 17, 18, 20, 22, 24];
+const HEADS = new Set(['sec', 'title', 'by', 'h', 'sub']);
 
-let cleanup = null;
+const mi = (name, cls = '') => `<i class="ico ${cls}" style="--m:url(/icons/ui/${name}.png)" aria-hidden="true"></i>`;
 
-export function renderReader(app, book, pageSets, startPage, onBack) {
-  cleanup?.();
+let active = null; // { el, cleanup }
+
+// ---------- små hjælpere ----------
+function hash(str) {
+  let h = 2166136261;
+  for (const c of str) h = Math.imul(h ^ c.codePointAt(0), 16777619);
+  return h >>> 0;
+}
+function rng(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+// Rækkefølge af de 8 ord for hver side: ny på hver side, og intet ord står
+// samme sted som på siden før.
+function orders(bookId, n) {
+  const rand = rng(hash(bookId));
+  const out = [];
+  let prev = null;
+  for (let k = 0; k < n; k++) {
+    let o;
+    do {
+      o = [0, 1, 2, 3, 4, 5, 6, 7];
+      for (let i = 7; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        [o[i], o[j]] = [o[j], o[i]];
+      }
+    } while (prev && o.some((v, i) => v === prev[i]));
+    out.push(o);
+    prev = o;
+  }
+  return out;
+}
+
+function pieceHTML(flow, it) {
+  const b = flow[it.i];
+  switch (b.t) {
+    case 'sec': return `<h1 class="sec-title">${esc(b.x)}</h1>`;
+    case 'title': return `<h1 class="book-title">${esc(b.x)}</h1>`;
+    case 'by': return `<p class="book-by">${esc(b.x)}</p>`;
+    case 'h': return `<h2 class="chap">${esc(b.x)}</h2>`;
+    case 'sub': return `<p class="chap-sub">${esc(b.x)}</p>`;
+    case 'sep': return `<p class="sep">*&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;&nbsp;*</p>`;
+    default: {
+      const words = b.w || (b.w = b.x.split(' '));
+      const text = words.slice(it.from, it.to).join(' ');
+      return `<p class="${it.from > 0 || b.noind ? 'noind' : ''}">${esc(text)}</p>`;
+    }
+  }
+}
+
+function glossHTML(order) {
+  const items = glossaryWords(order);
+  return `
+    <aside class="gloss">
+      <h4>${esc(glossaryTitle())}</h4>
+      <ul>${items.map((w) => `<li><b>${esc(w.word)}</b> – ${esc(w.explanation.charAt(0).toLowerCase() + w.explanation.slice(1))}</li>`).join('')}</ul>
+    </aside>`;
+}
+
+// Deler strømmen op i skærmsider ved at måle i et skjult element.
+function paginate(flow, m, H) {
+  const pages = [];
+  let cur = [];
+  m.innerHTML = '';
+  const fits = () => m.offsetHeight <= H;
+  const add = (it) => {
+    m.insertAdjacentHTML('beforeend', pieceHTML(flow, it));
+    return m.lastElementChild;
+  };
+  const flush = () => {
+    // en overskrift må ikke stå alene nederst på en side
+    const carry = [];
+    while (cur.length > 1 && HEADS.has(flow[cur[cur.length - 1].i].t)) carry.unshift(cur.pop());
+    if (cur.length) pages.push(cur);
+    cur = [];
+    m.innerHTML = '';
+    for (const it of carry) {
+      add(it);
+      cur.push(it);
+    }
+  };
+
+  for (let i = 0; i < flow.length; i++) {
+    const b = flow[i];
+    if (b.t !== 'p') {
+      if (b.t === 'sep' && !cur.length) continue;
+      const el = add({ i });
+      if (!fits()) {
+        el.remove();
+        flush();
+        if (b.t === 'sep') continue;
+        add({ i });
+      }
+      cur.push({ i });
+      continue;
+    }
+    const words = b.w || (b.w = b.x.split(' '));
+    let from = 0;
+    while (from < words.length) {
+      const it = { i, from, to: words.length };
+      const el = add(it);
+      if (fits()) {
+        cur.push(it);
+        break;
+      }
+      let lo = 0;
+      let hi = words.length - from;
+      while (hi - lo > 1) {
+        const mid = (lo + hi) >> 1;
+        el.textContent = words.slice(from, from + mid).join(' ');
+        if (fits()) lo = mid;
+        else hi = mid;
+      }
+      // Under en linje plads tilbage: start afsnittet på næste side
+      if ((lo < 7 && from === 0 && cur.length) || lo === 0) {
+        el.remove();
+        if (!cur.length) lo = 1;
+        else {
+          flush();
+          continue;
+        }
+      }
+      el.textContent = words.slice(from, from + lo).join(' ');
+      cur.push({ i, from, to: from + lo });
+      from += lo;
+      flush();
+    }
+  }
+  if (cur.length) pages.push(cur);
+  return pages.map((items) => ({ items, start: pieceStart(flow, items[0]), seg: flow[items[0].i].seg }));
+}
+
+// ---------- åbn / luk ----------
+export function openReader(root, book, startIndex, onClose) {
+  closeReaderNow();
   markOpened(book.id);
-  const n = book.pages.length;
-  let cur = Math.max(0, Math.min(n - 1, startPage ?? bookState(book.id).page));
-  setPage(book.id, cur);
-
   const st = getState().settings;
-  app.innerHTML = `
-  <div class="reader theme-${st.theme} font-${st.font}" style="--fs:${st.fontSize}px">
+  const el = document.createElement('div');
+  el.className = `reader theme-${st.theme} font-${st.font}`;
+  el.style.setProperty('--fs', `${st.fontSize}px`);
+  el.innerHTML = `
     <header class="r-top">
-      <button class="icon-btn" data-act="back" aria-label="Luk bog">${icon.back}</button>
-      <div class="r-title">${esc(book.title)}</div>
-      <button class="icon-btn" data-act="toc" aria-label="Indhold">${icon.list}</button>
-      <button class="icon-btn" data-act="aa" aria-label="Skrift og visning">${icon.aa}</button>
-      <button class="icon-btn" data-act="bm" aria-label="Bogmærke"></button>
+      <button class="r-btn" data-act="close" aria-label="Luk">${mi('r-close', 'r-close')}</button>
+      <span></span>
+      <button class="r-btn" data-act="aa" aria-label="Skrift og visning">${mi('r-aa', 'r-aa')}</button>
     </header>
     <div class="pager">
       <div class="track"><section class="pg"></section><section class="pg"></section><section class="pg"></section></div>
     </div>
     <footer class="r-bottom">
-      <div class="r-progress"><span></span></div>
-      <div class="r-foot"><span class="r-pageno" id="pageNo"></span><span class="r-pct"></span></div>
+      <button class="r-btn" data-act="toc" aria-label="Indhold">${mi('r-toc', 'r-toc')}</button>
+      <div class="r-slider">
+        <span class="r-label" id="pageNo"></span>
+        <div class="r-hit"><div class="r-track"><span class="r-fill"></span><span class="r-knob"></span></div></div>
+      </div>
+      <button class="r-btn" data-act="bm" aria-label="Bogmærke">${mi('r-bookmark', 'r-bm-off')}${mi('r-bookmark-on', 'r-bm-on')}</button>
     </footer>
-    <div class="sheet" hidden><div class="sheet-backdrop"></div><div class="sheet-panel"></div></div>
-  </div>`;
-
-  const root = app.querySelector('.reader');
-  const pager = root.querySelector('.pager');
-  const track = root.querySelector('.track');
-  const panels = [...track.children];
-  const bmBtn = root.querySelector('[data-act="bm"]');
-  const sheet = root.querySelector('.sheet');
-  const sheetPanel = root.querySelector('.sheet-panel');
+    <div class="pg-measure" aria-hidden="true"><div class="pg-text"></div></div>
+    <div class="sheet" hidden><div class="sheet-backdrop"></div><div class="sheet-panel"></div></div>`;
+  root.appendChild(el);
   document.body.classList.add('reading');
   setThemeColor(st.theme);
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('open')));
 
-  // ---------- sider ----------
-  function blocksHTML(i) {
-    const pg = book.pages[i];
-    let blocks = pg.blocks;
-    if (i === 0) {
-      const k = kickerParagraph(book);
-      if (k) blocks = [blocks[0], { p: k }, ...blocks.slice(1)];
-    }
-    let afterHead = i === book.forordPages;
-    let out = '';
-    if (i === 0) out += `<h1 class="sec-title">Forord</h1>`;
-    if (i === book.forordPages) out += `<h1 class="book-title">${esc(book.title)}</h1><p class="book-by">af H.C. Andersen</p>`;
-    for (const b of blocks) {
-      if (b.h) {
-        out += `<h2 class="chap">${esc(b.h)}</h2>${b.sub ? `<p class="chap-sub">${esc(b.sub)}</p>` : ''}`;
-        afterHead = true;
-      } else if (b.sep) {
-        out += `<p class="sep">*&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;&nbsp;*</p>`;
-        afterHead = true;
-      } else {
-        out += `<p class="${b.cont || afterHead ? 'noind' : ''}">${esc(b.p)}</p>`;
-        afterHead = false;
-      }
-    }
-    return out;
+  const pager = el.querySelector('.pager');
+  const track = el.querySelector('.track');
+  const panels = [...track.children];
+  const measure = el.querySelector('.pg-measure');
+  const mText = measure.querySelector('.pg-text');
+  const bmBtn = el.querySelector('[data-act="bm"]');
+  const label = el.querySelector('#pageNo');
+  const rTrack = el.querySelector('.r-track');
+  const rHit = el.querySelector('.r-hit');
+  const sheet = el.querySelector('.sheet');
+  const sheetPanel = el.querySelector('.sheet-panel');
+
+  let flow = [];
+  let pages = [];
+  let ords = [];
+  let cur = 0;
+  let pos = null; // tegn-position, der skal bevares ved ny opdeling
+
+  if (startIndex == null) {
+    const s = bookState(book.id);
+    pos = s.pos ?? segStarts(book)[s.page] ?? 0;
   }
 
-  function glossaryHTML(i) {
-    const items = glossaryFor(pageSets, book.id, i);
-    return `
-      <aside class="gloss">
-        <h4>${esc(glossaryTitle())}</h4>
-        <dl>${items.map((w) => `<div><dt>${esc(w.word)}</dt><dd>${esc(w.explanation)}</dd></div>`).join('')}</dl>
-      </aside>`;
+  function layout() {
+    const s = getState().settings;
+    flow = buildFlow(book, kickerParagraph(book));
+    // mål ordboksen og den plads, teksten har
+    measure.style.width = `${pager.clientWidth}px`;
+    mText.innerHTML = '';
+    measure.insertAdjacentHTML('beforeend', glossHTML([0, 1, 2, 3, 4, 5, 6, 7]));
+    const g = measure.querySelector('.gloss');
+    const padTop = 8;
+    const H = Math.floor(pager.clientHeight - padTop - g.offsetHeight - 6);
+    g.remove();
+    el.style.setProperty('--th', `${Math.max(H, 120)}px`);
+    pages = paginate(flow, mText, Math.max(H, 120));
+    ords = orders(book.id + s.fontSize + s.font, pages.length);
+    if (pos != null) {
+      cur = 0;
+      for (let k = 0; k < pages.length; k++) if (pages[k].start <= pos) cur = k;
+    } else {
+      cur = Math.max(0, Math.min(pages.length - 1, startIndex));
+    }
+    render();
   }
 
-  function pageHTML(i) {
-    if (i < 0 || i >= n) return '';
-    const pg = book.pages[i];
-    const marked = bookState(book.id).bookmarks.includes(i);
-    return `
-      <div class="pg-scroll">
-        <div class="pg-inner">
-          <div class="pg-run"><span>${pg.section === 'forord' ? 'Forord' : esc(book.title)}</span><span>${i + 1}</span></div>
-          ${blocksHTML(i)}
-          ${glossaryHTML(i)}
-        </div>
-      </div>
-      <span class="ribbon ${marked ? 'show' : ''}"></span>`;
+  function pageHTML(k) {
+    if (k < 0 || k >= pages.length) return '';
+    const p = pages[k];
+    const end = pages[k + 1] ? pages[k + 1].start : Infinity;
+    const marked = bookState(book.id).bookmarks.some((x) => x >= p.start && x < end);
+    return `<div class="pg-text">${p.items.map((it) => pieceHTML(flow, it)).join('')}</div>
+      ${glossHTML(ords[k])}<span class="ribbon ${marked ? 'show' : ''}"></span>`;
+  }
+
+  function isMarked(k) {
+    const p = pages[k];
+    const end = pages[k + 1] ? pages[k + 1].start : Infinity;
+    return bookState(book.id).bookmarks.some((x) => x >= p.start && x < end);
+  }
+
+  function setSlider(k) {
+    const n = pages.length;
+    const f = n > 1 ? k / (n - 1) : 1;
+    rTrack.style.setProperty('--f', f);
+    label.textContent = `${k + 1} af ${n}`;
   }
 
   function render() {
     panels[0].innerHTML = pageHTML(cur - 1);
     panels[1].innerHTML = pageHTML(cur);
     panels[2].innerHTML = pageHTML(cur + 1);
-    panels.forEach((p) => { const s = p.querySelector('.pg-scroll'); if (s) s.scrollTop = 0; });
     track.style.transition = 'none';
     track.style.transform = 'translateX(-33.3333%)';
-    const pct = percent(book, cur);
-    root.querySelector('#pageNo').textContent = `Side ${cur + 1} af ${n}`;
-    root.querySelector('.r-pct').textContent = `${pct} % læst`;
-    root.querySelector('.r-progress span').style.width = `${Math.max(pct, 1)}%`;
-    const marked = bookState(book.id).bookmarks.includes(cur);
-    bmBtn.innerHTML = marked ? icon.bookmarkFill : icon.bookmark;
-    bmBtn.classList.toggle('on', marked);
-    setPage(book.id, cur);
+    setSlider(cur);
+    bmBtn.classList.toggle('on', isMarked(cur));
+    const p = pages[cur];
+    pos = p.start;
+    const seg = cur === pages.length - 1 ? book.pages.length - 1 : p.seg;
+    setPosition(book.id, seg, p.start);
     history.replaceState(history.state, '', `/bog/${book.id}/laes?side=${cur + 1}`);
   }
 
   function go(delta) {
     const next = cur + delta;
-    if (next < 0 || next >= n) {
-      bounce(delta);
-      return;
-    }
-    track.style.transition = 'transform .28s cubic-bezier(.2,.7,.2,1)';
+    if (next < 0 || next >= pages.length) return bounce(delta);
+    track.style.transition = 'transform .26s cubic-bezier(.2,.7,.2,1)';
     track.style.transform = `translateX(${delta > 0 ? '-66.6667%' : '0%'})`;
-    const done = () => {
-      track.removeEventListener('transitionend', done);
-      clearTimeout(t);
+    let done = false;
+    const fin = () => {
+      if (done) return;
+      done = true;
       cur = next;
       render();
     };
-    const t = setTimeout(done, 350);
-    track.addEventListener('transitionend', done);
-  }
-
-  function jump(i) {
-    cur = Math.max(0, Math.min(n - 1, i));
-    render();
+    track.addEventListener('transitionend', fin, { once: true });
+    setTimeout(fin, 320);
   }
 
   function bounce(delta) {
-    track.style.transition = 'transform .18s ease';
-    track.style.transform = `translateX(calc(-33.3333% + ${delta > 0 ? -24 : 24}px))`;
-    setTimeout(() => {
-      track.style.transform = 'translateX(-33.3333%)';
-    }, 180);
+    track.style.transition = 'transform .16s ease';
+    track.style.transform = `translateX(calc(-33.3333% + ${delta > 0 ? -22 : 22}px))`;
+    setTimeout(() => { track.style.transform = 'translateX(-33.3333%)'; }, 160);
+  }
+
+  function jump(k) {
+    cur = Math.max(0, Math.min(pages.length - 1, k));
+    render();
   }
 
   // ---------- swipe og tryk ----------
-  let sx = 0, sy = 0, dx = 0, axis = null, active = false, t0 = 0;
+  let sx = 0, sy = 0, dx = 0, axis = null, down = false, t0 = 0;
   pager.addEventListener('pointerdown', (e) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
-    active = true;
-    sx = e.clientX;
-    sy = e.clientY;
-    dx = 0;
-    axis = null;
-    t0 = e.timeStamp;
+    down = true; sx = e.clientX; sy = e.clientY; dx = 0; axis = null; t0 = e.timeStamp;
   });
   pager.addEventListener('pointermove', (e) => {
-    if (!active) return;
+    if (!down) return;
     const mx = e.clientX - sx;
     const my = e.clientY - sy;
     if (!axis && (Math.abs(mx) > 8 || Math.abs(my) > 8)) {
@@ -178,62 +320,78 @@ export function renderReader(app, book, pageSets, startPage, onBack) {
     }
     if (axis === 'x') {
       dx = mx;
-      if ((cur === 0 && dx > 0) || (cur === n - 1 && dx < 0)) dx *= 0.3;
+      if ((cur === 0 && dx > 0) || (cur === pages.length - 1 && dx < 0)) dx *= 0.3;
       track.style.transform = `translateX(calc(-33.3333% + ${dx}px))`;
     }
   });
-  const end = (e) => {
-    if (!active) return;
-    active = false;
+  pager.addEventListener('pointerup', (e) => {
+    if (!down) return;
+    down = false;
     if (axis === 'x') {
-      const w = pager.clientWidth;
       const fast = Math.abs(dx) > 30 && e.timeStamp - t0 < 260;
-      if ((Math.abs(dx) > w * 0.2 || fast) && !(cur === 0 && dx > 0) && !(cur === n - 1 && dx < 0)) {
-        go(dx < 0 ? 1 : -1);
-      } else {
+      const edge = (cur === 0 && dx > 0) || (cur === pages.length - 1 && dx < 0);
+      if ((Math.abs(dx) > pager.clientWidth * 0.18 || fast) && !edge) go(dx < 0 ? 1 : -1);
+      else {
         track.style.transition = 'transform .2s ease';
         track.style.transform = 'translateX(-33.3333%)';
       }
-    } else if (!axis && e.type === 'pointerup') {
+    } else if (!axis) {
       const x = (e.clientX - pager.getBoundingClientRect().left) / pager.clientWidth;
-      if (x < 0.22) go(-1);
-      else if (x > 0.78) go(1);
-      else root.classList.toggle('immersive');
+      if (x < 0.3) go(-1);
+      else if (x > 0.7) go(1);
     }
     axis = null;
+  });
+  pager.addEventListener('pointercancel', () => {
+    down = false;
+    axis = null;
+    track.style.transition = 'transform .2s ease';
+    track.style.transform = 'translateX(-33.3333%)';
+  });
+
+  // slider
+  let dragging = false;
+  const sliderTo = (e) => {
+    const r = rTrack.getBoundingClientRect();
+    const f = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+    return Math.round(f * (pages.length - 1));
   };
-  pager.addEventListener('pointerup', end);
-  pager.addEventListener('pointercancel', (e) => {
-    if (axis === 'x') {
-      track.style.transition = 'transform .2s ease';
-      track.style.transform = 'translateX(-33.3333%)';
-    }
-    active = false;
-    axis = null;
+  rHit.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    try { rHit.setPointerCapture(e.pointerId); } catch { /* ok */ }
+    setSlider(sliderTo(e));
+  });
+  rHit.addEventListener('pointermove', (e) => { if (dragging) setSlider(sliderTo(e)); });
+  rHit.addEventListener('pointerup', (e) => {
+    if (!dragging) return;
+    dragging = false;
+    jump(sliderTo(e));
   });
 
   const onKey = (e) => {
-    if (!sheet.hidden) {
-      if (e.key === 'Escape') closeSheet();
-      return;
-    }
+    if (!sheet.hidden) { if (e.key === 'Escape') closeSheet(); return; }
     if (e.key === 'ArrowRight') go(1);
     if (e.key === 'ArrowLeft') go(-1);
   };
   document.addEventListener('keydown', onKey);
+  let rt = null;
+  const onResize = () => { clearTimeout(rt); rt = setTimeout(layout, 150); };
+  window.addEventListener('resize', onResize);
 
-  // ---------- knapper ----------
-  root.querySelector('[data-act="back"]').addEventListener('click', () => onBack());
+  // knapper
+  el.querySelector('[data-act="close"]').addEventListener('click', () => onClose());
+  el.querySelector('[data-act="aa"]').addEventListener('click', openAa);
+  el.querySelector('[data-act="toc"]').addEventListener('click', openToc);
   bmBtn.addEventListener('click', () => {
-    toggleBookmark(book.id, cur);
+    const p = pages[cur];
+    const end = pages[cur + 1] ? pages[cur + 1].start : Infinity;
+    toggleBookmark(book.id, p.start, end);
     render();
   });
-  root.querySelector('[data-act="aa"]').addEventListener('click', openAa);
-  root.querySelector('[data-act="toc"]').addEventListener('click', openToc);
   sheet.querySelector('.sheet-backdrop').addEventListener('click', closeSheet);
 
-  // Skjult: dobbelttryk på sidetallet viser ordet
-  bindPeek(root.querySelector('#pageNo'));
+  // Skjult: dobbelttryk på »x af y« viser ordet
+  bindPeek(label);
 
   function openSheet(html) {
     sheetPanel.innerHTML = `<div class="sheet-grab"></div>${html}`;
@@ -247,24 +405,22 @@ export function renderReader(app, book, pageSets, startPage, onBack) {
 
   function applySettings() {
     const s = getState().settings;
-    root.className = `reader theme-${s.theme} font-${s.font}${root.classList.contains('immersive') ? ' immersive' : ''}`;
-    root.style.setProperty('--fs', `${s.fontSize}px`);
+    el.className = `reader theme-${s.theme} font-${s.font} open`;
+    el.style.setProperty('--fs', `${s.fontSize}px`);
     setThemeColor(s.theme);
+    layout();
   }
 
   function openAa() {
     const s = getState().settings;
-    const idx = SIZES.indexOf(s.fontSize) === -1 ? 3 : SIZES.indexOf(s.fontSize);
+    const idx = Math.max(0, SIZES.indexOf(s.fontSize));
     openSheet(`
-      <h3>Visning</h3>
       <div class="aa-size">
         <button data-fs="-1" aria-label="Mindre skrift"><small>A</small></button>
         <div class="aa-steps">${SIZES.map((_, i) => `<i class="${i <= idx ? 'on' : ''}"></i>`).join('')}</div>
         <button data-fs="1" aria-label="Større skrift">A</button>
       </div>
-      <div class="aa-label">Skrifttype</div>
       <div class="aa-fonts">${FONTS.map((f) => `<button data-font="${f.id}" class="font-${f.id} ${s.font === f.id ? 'on' : ''}">${f.label}</button>`).join('')}</div>
-      <div class="aa-label">Tema</div>
       <div class="aa-themes">${THEMES.map((t) => `<button data-theme="${t.id}" class="th-${t.id} ${s.theme === t.id ? 'on' : ''}"><span>Aa</span>${t.label}</button>`).join('')}</div>
     `);
     sheetPanel.querySelectorAll('[data-fs]').forEach((b) => b.addEventListener('click', () => {
@@ -285,20 +441,33 @@ export function renderReader(app, book, pageSets, startPage, onBack) {
     }));
   }
 
+  function pageOf(predicate) {
+    for (let k = 0; k < pages.length; k++) if (pages[k].items.some((it) => predicate(flow[it.i]))) return k;
+    return 0;
+  }
+
   function openToc() {
-    const chapters = [{ label: 'Forord', page: 0 }, { label: book.title, page: book.forordPages }];
-    book.pages.forEach((pg, i) => pg.blocks.forEach((b) => { if (b.h) chapters.push({ label: b.h, page: i, sub: true }); }));
-    const marks = bookState(book.id).bookmarks;
-    const snippet = (i) => {
-      const p = book.pages[i].blocks.find((b) => b.p)?.p || '';
-      return esc(p.slice(0, 70)) + (p.length > 70 ? '…' : '');
+    const chapters = [
+      { label: 'Forord', page: 0 },
+      { label: book.title, page: pageOf((b) => b.t === 'title') },
+    ];
+    flow.forEach((b) => { if (b.t === 'h') chapters.push({ label: b.x, page: pageOf((x) => x === b), sub: true }); });
+    const marks = bookState(book.id).bookmarks.map((x) => {
+      let k = 0;
+      for (let j = 0; j < pages.length; j++) if (pages[j].start <= x) k = j;
+      return k;
+    });
+    const snippet = (k) => {
+      const it = pages[k].items.find((x) => flow[x.i].t === 'p');
+      const t = it ? (flow[it.i].w || flow[it.i].x.split(' ')).slice(it.from, it.from + 14).join(' ') : '';
+      return esc(t) + '…';
     };
     openSheet(`
       <h3>Indhold</h3>
-      <ul class="toc">${chapters.map((c) => `<li><button data-page="${c.page}" class="${c.sub ? 'sub' : ''} ${cur >= c.page ? 'past' : ''}"><span>${esc(c.label)}</span><span class="pn">${c.page + 1}</span></button></li>`).join('')}</ul>
+      <ul class="toc">${chapters.map((c) => `<li><button data-page="${c.page}" class="${c.sub ? 'sub' : ''}"><span>${esc(c.label)}</span><span class="pn">${c.page + 1}</span></button></li>`).join('')}</ul>
       <h3>Bogmærker</h3>
-      ${marks.length ? `<ul class="toc marks">${marks.map((m) => `<li><button data-page="${m}">${icon.bookmarkFill}<span><b>Side ${m + 1}</b><small>${snippet(m)}</small></span></button></li>`).join('')}</ul>`
-        : `<p class="toc-empty">Tryk på ${icon.bookmark} for at sætte et bogmærke.</p>`}
+      ${marks.length ? `<ul class="toc marks">${[...new Set(marks)].map((k) => `<li><button data-page="${k}">${mi('r-bookmark-on', 'toc-bm')}<span><b>Side ${k + 1}</b><small>${snippet(k)}</small></span></button></li>`).join('')}</ul>`
+        : `<p class="toc-empty">Du har ingen bogmærker i denne bog.</p>`}
     `);
     sheetPanel.querySelectorAll('[data-page]').forEach((b) => b.addEventListener('click', () => {
       jump(Number(b.dataset.page));
@@ -306,22 +475,42 @@ export function renderReader(app, book, pageSets, startPage, onBack) {
     }));
   }
 
-  render();
+  // Vent til skrifterne er klar, så målingen passer
+  const start = () => requestAnimationFrame(layout);
+  if (document.fonts?.ready) document.fonts.ready.then(start);
+  else start();
 
-  cleanup = () => {
+  const cleanup = () => {
     document.removeEventListener('keydown', onKey);
-    document.body.classList.remove('reading');
-    setThemeColor('app');
-    cleanup = null;
+    window.removeEventListener('resize', onResize);
   };
-  return cleanup;
+  active = { el, cleanup };
 }
 
+// Luk med animation (glider ned)
 export function closeReader() {
-  cleanup?.();
+  if (!active) return;
+  const { el, cleanup } = active;
+  active = null;
+  cleanup();
+  document.body.classList.remove('reading');
+  setThemeColor('app');
+  el.classList.remove('open');
+  setTimeout(() => el.remove(), 320);
+}
+
+function closeReaderNow() {
+  if (!active) return;
+  active.cleanup();
+  active.el.remove();
+  active = null;
+}
+
+export function readerOpen() {
+  return !!active;
 }
 
 function setThemeColor(theme) {
-  const c = { light: '#ffffff', sepia: '#f5ecd9', dark: '#141414', app: '#a60033' }[theme] || '#a60033';
+  const c = { light: '#ffffff', sepia: '#f5ecd9', dark: '#141414', app: '#ac0030' }[theme] || '#ac0030';
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', c);
 }
