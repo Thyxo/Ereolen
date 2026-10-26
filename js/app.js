@@ -1,7 +1,9 @@
 // Opstart og routing.
 import { initState } from './state.js';
 import { initSecret } from './secret.js';
-import { initViews, renderShelf, renderBook, renderHome, renderSearch, renderProfile } from './views.js';
+import {
+  initViews, renderBook, renderHome, renderSearch, renderReadListen, renderMyPage, renderLoans, renderSimpleList, renderMore,
+} from './views.js';
 import { renderReader, closeReader } from './reader.js';
 
 const app = document.getElementById('app');
@@ -27,25 +29,32 @@ function route() {
   const url = new URL(location.href);
   const path = url.pathname.replace(/\/+$/, '') || '/';
   const parts = path.split('/').filter(Boolean);
-  if (parts[0] !== 'laes') closeReader();
+  const reading = parts[0] === 'bog' && parts[2] === 'laes';
+  if (!reading) closeReader();
 
-  if (parts[0] === 'laes' && parts[1]) {
+  // gamle adresser
+  if (parts[0] === 'laes' && parts[1]) return navigate(`/bog/${parts[1]}/laes${url.search}`, true);
+
+  if (parts[0] === 'bog' && parts[1]) {
     const book = BOOKS.find((b) => b.id === parts[1]);
     if (!book) return navigate('/', true);
-    const side = Number(url.searchParams.get('side'));
-    renderReader(app, book, PAGESETS, side ? side - 1 : undefined, () => {
-      // Tilbage til bogsiden (eller hylden, hvis man kom direkte)
-      if (history.state?.fromApp) history.back();
-      else navigate(`/bog/${book.id}`);
-    });
-  } else if (parts[0] === 'bog' && parts[1]) {
-    const book = BOOKS.find((b) => b.id === parts[1]);
-    if (!book) return navigate('/', true);
-    renderBook(app, book);
-  } else if (parts[0] === 'forside') renderHome(app);
-  else if (parts[0] === 'soeg') renderSearch(app);
-  else if (parts[0] === 'profil') renderProfile(app);
-  else renderShelf(app);
+    if (reading) {
+      const side = Number(url.searchParams.get('side'));
+      renderReader(app, book, PAGESETS, side ? side - 1 : undefined, () => {
+        // Tilbage til bogsiden (eller dertil, hvis man kom direkte)
+        if (history.state?.fromApp) history.back();
+        else navigate(`/bog/${book.id}`);
+      });
+    } else {
+      renderBook(app, book);
+    }
+  } else if (parts[0] === 'soeg') renderSearch(app);
+  else if (parts[0] === 'laes-lyt') renderReadListen(app);
+  else if (parts[0] === 'min-side' && parts[1] === 'laan') renderLoans(app);
+  else if (parts[0] === 'min-side' && ['reserveringer', 'huskeliste', 'historik'].includes(parts[1])) renderSimpleList(app, parts[1]);
+  else if (parts[0] === 'min-side') renderMyPage(app);
+  else if (parts[0] === 'mere') renderMore(app);
+  else renderHome(app);
 
   const same = currentPath === path;
   currentPath = path;

@@ -1,8 +1,8 @@
 // Performerens skjulte funktioner (mode 1: egen telefon).
-//  - Dobbelttryk på logoet (eller sidetallet i læseren): viser i 1,2 sek. det ord,
-//    der har samme forbogstav som den senest åbnede bog.
-//  - Langt tryk på logoet: slår forord-kickeren til/fra (lille prik på "Profil").
-//  - Langt tryk (3 sek.) på overskriften "Min hylde": nulstiller alt til start.
+//  - Dobbelttryk på den røde header, kortnummeret eller sidetallet i læseren:
+//    viser i 1,2 sek. det ord, der har samme forbogstav som den senest åbnede bog.
+//  - Langt tryk på den røde header: slår forord-kickeren til/fra (prik på "Min side").
+//  - Langt tryk (3 sek.) på "Indstillinger" på Min side: nulstiller alt.
 import { getState, toggleKicker } from './state.js';
 
 let words = null;

@@ -6,9 +6,9 @@ En PWA (mobil først) med 17 af H.C. Andersens eventyr. Den ser ud som en almind
 
 ## Effekten (mode 1)
 
-1. Giv tilskueren telefonen. Lad dem åbne en bog og bladre til en tilfældig side.
+1. Giv tilskueren telefonen. Lad dem gå til **Læs/lyt**, åbne en bog og bladre til en tilfældig side.
 2. Nederst på hver side står boksen **»Gamle ord forklaret«** med 8 ord. Tilskueren vælger ét ord i tankerne.
-3. Bed tilskueren gå tilbage til **Min hylde** og åbne den bog, hvis titel starter med samme bogstav som ordet.
+3. Bed tilskueren gå tilbage til **Læs/lyt** (eller **Min side → Lån**) og åbne den bog, hvis titel starter med samme bogstav som ordet.
 4. Du kender nu ordet. Se titlen, spørg om den eller brug den skjulte peek (se nedenfor).
 5. Kicker (valgfri): tilskueren åbner forordet i bogen. Dér står deres ord.
 
@@ -31,11 +31,11 @@ De samme 8 ord står på alle sider, men i en ny rækkefølge på hver side. Ing
 
 | Gestus | Hvad sker der |
 |---|---|
-| **Dobbelttryk på logoet** »eReolen« | Ordet til den senest åbnede bog vises med gråt ved siden af logoet i 1,2 sek. |
-| **Dobbelttryk på »Side x af y«** i læseren | Samme ord vises i stedet for sidetallet i 1,2 sek. |
-| **Dobbelttryk på overskriften** på en bogside | Samme ord vises i 1,2 sek. |
-| **Langt tryk (0,7 sek.) på logoet** | Slår forord-kickeren til/fra. Når den er slået til, viser en lille rød prik sig på »Profil«. |
-| **Langt tryk (3 sek.) på »Min hylde«** | Nulstiller alt: læsefremskridt, bogmærker, kicker og »senest åbnet«. Gør det før hvert show. |
+| **Dobbelttryk på den røde header** (logoet på Forside, titlen på andre sider) | Ordet til den senest åbnede bog vises i lille, svag skrift under logoet/titlen i 1,2 sek. |
+| **Dobbelttryk på kortnummeret** på Min side | Ordet vises i stedet for »København« i 1,2 sek. |
+| **Dobbelttryk på »Side x af y«** i læseren | Ordet vises i stedet for sidetallet i 1,2 sek. |
+| **Langt tryk (0,7 sek.) på den røde header** | Slår forord-kickeren til/fra. Når den er slået til, vises en lille rød prik på »Min side«. |
+| **Langt tryk (3 sek.) på »Indstillinger«** på Min side | Nulstiller alt: læsefremskridt, bogmærker, kicker og »senest åbnet«. Gør det før hvert show. |
 
 Når kickeren er slået til, får forordet i hver af de 8 bøger et ekstra afsnit:
 *»Til denne udgave har redaktionen udvalgt ét gammelt ord, som vi håber, du vil tænke på, mens du læser: »Forvalter«.«*
@@ -51,6 +51,7 @@ De 8 bøger er enten ulæste eller færdiglæste, så »Læs« / »Læs igen« a
 ## Teknik
 
 - Ren HTML/CSS/JS uden byggetrin. Hostes statisk på Vercel.
+- Design efter den rigtige eReolen-app: rød header, faner Forside/Søg/Læs/lyt/Min side/Mere, skrifttypen Source Sans 3 (lokalt i `fonts/`).
 - Service worker (`sw.js`) cacher alt, så læsningen virker offline.
 - Tilstand (fremskridt, bogmærker, indstillinger) gemmes kun i telefonens `localStorage`. Ingen login og ingen tracking.
 
@@ -74,7 +75,7 @@ node scripts/build-data.mjs         # bygger books.json og pageSets.json, valide
 
 ### Ruter
 
-`/` Min hylde · `/bog/:id` bogside · `/laes/:id?side=N` læser · `/forside` · `/soeg` · `/profil`
+`/` Forside · `/soeg` Søg · `/laes-lyt` Læs/lyt (alle 17 lån) · `/min-side` Min side · `/min-side/laan` Lån · `/mere` Mere · `/bog/:id` bogside · `/bog/:id/laes?side=N` læser
 
 ## Næste skridt (mode 2)
 

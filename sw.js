@@ -1,10 +1,11 @@
 // Service worker: alt til læsning ligger i cachen, så appen virker offline.
 // Netværk først (altid nyeste version), cache som reserve.
-const CACHE = 'ereolen-v1';
+const CACHE = 'ereolen-v2';
 const ASSETS = [
   '/', '/index.html', '/css/app.css',
   '/js/app.js', '/js/state.js', '/js/views.js', '/js/reader.js', '/js/covers.js', '/js/secret.js', '/js/ui.js',
   '/data/books.json', '/data/words.json', '/data/pageSets.json',
+  '/fonts/source-sans-3-400.woff2', '/fonts/source-sans-3-600.woff2', '/fonts/source-sans-3-700.woff2', '/fonts/source-sans-3-900.woff2', '/fonts/barlow-semi-condensed-400.woff2',
   '/manifest.webmanifest', '/icons/icon-192.png', '/icons/apple-touch-icon.png', '/icons/favicon-32.png',
 ];
 

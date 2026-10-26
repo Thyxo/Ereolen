@@ -3,7 +3,7 @@
   "cleanUrls": false,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/((?!css/|js/|data/|icons/|sw\\.js|manifest\\.webmanifest).*)", "destination": "/index.html" }
+    { "source": "/((?!css/|js/|data/|icons/|fonts/|sw\\.js|manifest\\.webmanifest).*)", "destination": "/index.html" }
   ],
   "headers": [
     { "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }, { "key": "Service-Worker-Allowed", "value": "/" }] },

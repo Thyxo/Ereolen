@@ -120,7 +120,7 @@ export function renderReader(app, book, pageSets, startPage, onBack) {
     bmBtn.innerHTML = marked ? icon.bookmarkFill : icon.bookmark;
     bmBtn.classList.toggle('on', marked);
     setPage(book.id, cur);
-    history.replaceState(history.state, '', `/laes/${book.id}?side=${cur + 1}`);
+    history.replaceState(history.state, '', `/bog/${book.id}/laes?side=${cur + 1}`);
   }
 
   function go(delta) {
@@ -322,6 +322,6 @@ export function closeReader() {
 }
 
 function setThemeColor(theme) {
-  const c = { light: '#ffffff', sepia: '#f5ecd9', dark: '#141414', app: '#ffffff' }[theme] || '#ffffff';
+  const c = { light: '#ffffff', sepia: '#f5ecd9', dark: '#141414', app: '#a60033' }[theme] || '#a60033';
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', c);
 }
