@@ -1,0 +1,218 @@
+{
+  "title": "Gamle ord forklaret",
+  "ownModeSet": 0,
+  "sets": [
+    {
+      "id": "A",
+      "words": [
+        {
+          "word": "Bondestue",
+          "letters": 9,
+          "explanation": "Dagligstue i et gammelt bondehus.",
+          "initial": "B"
+        },
+        {
+          "word": "Dragkiste",
+          "letters": 9,
+          "explanation": "Kommode med skuffer til tøj og linned.",
+          "initial": "D"
+        },
+        {
+          "word": "Forvalter",
+          "letters": 9,
+          "explanation": "Bestyrer af en gård på ejerens vegne.",
+          "initial": "F"
+        },
+        {
+          "word": "Kakkelovn",
+          "letters": 9,
+          "explanation": "Ovn beklædt med glaserede fliser.",
+          "initial": "K"
+        },
+        {
+          "word": "Lirekasse",
+          "letters": 9,
+          "explanation": "Spilleværk, man drejer på med et håndsving.",
+          "initial": "L"
+        },
+        {
+          "word": "Nattevægter",
+          "letters": 11,
+          "explanation": "Mand, der om natten vogtede byens gader.",
+          "initial": "N"
+        },
+        {
+          "word": "Rendesten",
+          "letters": 9,
+          "explanation": "Rende langs gaden til regn- og spildevand.",
+          "initial": "R"
+        },
+        {
+          "word": "Tjenestepige",
+          "letters": 12,
+          "explanation": "Ung pige ansat til husligt arbejde.",
+          "initial": "T"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "words": [
+        {
+          "word": "Embedsmand",
+          "letters": 10,
+          "explanation": "Mand i statens eller kongens tjeneste.",
+          "initial": "E"
+        },
+        {
+          "word": "Gadedreng",
+          "letters": 9,
+          "explanation": "Dreng, der driver omkring på gaden.",
+          "initial": "G"
+        },
+        {
+          "word": "Hjemstavn",
+          "letters": 9,
+          "explanation": "Egnen, hvor man er født og vokset op.",
+          "initial": "H"
+        },
+        {
+          "word": "Indsidder",
+          "letters": 9,
+          "explanation": "Person, der lejede sig ind hos andre på landet.",
+          "initial": "I"
+        },
+        {
+          "word": "Overfrakke",
+          "letters": 10,
+          "explanation": "Lang frakke, der bæres uden på tøjet.",
+          "initial": "O"
+        },
+        {
+          "word": "Pottemager",
+          "letters": 10,
+          "explanation": "Håndværker, der laver krukker og fade af ler.",
+          "initial": "P"
+        },
+        {
+          "word": "Spisekammer",
+          "letters": 11,
+          "explanation": "Køligt rum til opbevaring af madvarer.",
+          "initial": "S"
+        },
+        {
+          "word": "Vandmølle",
+          "letters": 9,
+          "explanation": "Mølle, der drives af strømmende vand.",
+          "initial": "V"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "words": [
+        {
+          "word": "Aftenstund",
+          "letters": 10,
+          "explanation": "Den stille tid sidst på dagen.",
+          "initial": "A"
+        },
+        {
+          "word": "Bryggerset",
+          "letters": 10,
+          "explanation": "Rum til vask, bagning og ølbrygning.",
+          "initial": "B"
+        },
+        {
+          "word": "Kirkesanger",
+          "letters": 11,
+          "explanation": "Mand, der ledte sangen i kirken; degn.",
+          "initial": "K"
+        },
+        {
+          "word": "Lysestage",
+          "letters": 9,
+          "explanation": "Holder til et tændt stearinlys.",
+          "initial": "L"
+        },
+        {
+          "word": "Naboskab",
+          "letters": 8,
+          "explanation": "Forholdet mellem folk, der bor tæt.",
+          "initial": "N"
+        },
+        {
+          "word": "Rokkehjul",
+          "letters": 9,
+          "explanation": "Det store hjul på en spinderok.",
+          "initial": "R"
+        },
+        {
+          "word": "Skolemester",
+          "letters": 11,
+          "explanation": "Lærer i en landsbyskole.",
+          "initial": "S"
+        },
+        {
+          "word": "Tinkande",
+          "letters": 8,
+          "explanation": "Kande støbt af tin.",
+          "initial": "T"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "words": [
+        {
+          "word": "Dagligstue",
+          "letters": 10,
+          "explanation": "Husets stue til hverdagsbrug.",
+          "initial": "D"
+        },
+        {
+          "word": "Enkefrue",
+          "letters": 8,
+          "explanation": "Fornem kvinde, hvis mand er død.",
+          "initial": "E"
+        },
+        {
+          "word": "Fiskerleje",
+          "letters": 10,
+          "explanation": "Lille by ved kysten, hvor fiskerne bor.",
+          "initial": "F"
+        },
+        {
+          "word": "Gårdskarl",
+          "letters": 9,
+          "explanation": "Karl, der passer arbejdet på en gård.",
+          "initial": "G"
+        },
+        {
+          "word": "Hattemager",
+          "letters": 10,
+          "explanation": "Håndværker, der laver hatte.",
+          "initial": "H"
+        },
+        {
+          "word": "Overmåde",
+          "letters": 8,
+          "explanation": "Meget; i høj grad.",
+          "initial": "O"
+        },
+        {
+          "word": "Postmester",
+          "letters": 10,
+          "explanation": "Leder af et postkontor.",
+          "initial": "P"
+        },
+        {
+          "word": "Vaskekone",
+          "letters": 9,
+          "explanation": "Kvinde, der vaskede tøj for andre.",
+          "initial": "V"
+        }
+      ]
+    }
+  ]
+}
