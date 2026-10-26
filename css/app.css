@@ -32,7 +32,7 @@
 html { -webkit-text-size-adjust: 100%; background: #fff; }
 /* iOS-hjemmeskærm med gennemsigtig statusbar: brug den fulde skærmhøjde (lvh),
    ellers bliver der en hvid stribe under fanebaren. */
-html, body { position: fixed; top: 0; left: 0; right: 0; height: 100vh; height: 100lvh; overflow: hidden; overscroll-behavior: none; }
+html, body { position: fixed; top: 0; left: 0; right: 0; height: 100vh; height: var(--app-h, 100lvh); overflow: hidden; overscroll-behavior: none; }
 body {
   margin: 0;
   font-family: var(--sans);

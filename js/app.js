@@ -202,11 +202,11 @@ document.addEventListener('click', (e) => {
 });
 window.addEventListener('popstate', route);
 
-// Sikkerhedsnet til iOS: hvis appen er lavere end skærmen, så stræk den
+// iOS-hjemmeskærm: CSS-højderne (100%, 100vh, lvh) kan være for lave med
+// gennemsigtig statusbar. Brug telefonens målte højde til html, body og appen.
 function fitHeight() {
-  app.style.removeProperty('--app-h');
   const h = Math.max(window.innerHeight, document.documentElement.clientHeight);
-  if (app.getBoundingClientRect().height < h - 1) app.style.setProperty('--app-h', `${h}px`);
+  document.documentElement.style.setProperty('--app-h', `${h}px`);
 }
 window.addEventListener('resize', fitHeight);
 window.addEventListener('orientationchange', () => setTimeout(fitHeight, 300));
