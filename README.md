@@ -62,6 +62,7 @@ De 8 bøger er enten ulæste eller færdiglæste, så »Læs« / »Læs igen« a
 - Logo, faneikoner og læserens ikoner er klippet ud af skærmbilleder af den rigtige app (`icons/ui`).
 - Design efter den rigtige eReolen-app: rød header, faner Forside/Søg/Læs/lyt/Min side/Mere, skrifttypen Source Sans 3 (lokalt i `fonts/`).
 - Service worker (`sw.js`) cacher alt, så læsningen virker offline.
+- iPhone-hjemmeskærm: `html` er ikke fixed, og `fixHeight()` i `js/app.js` giver html, body og appen skærmens fulde højde i portræt (ellers kommer der en stribe i bunden). **Diagnose:** hold fingeren på versionslinjen nederst på *Mere* for at se skærm, innerHeight, appens højde, safe-area og om rettelsen er slået til.
 - Tilstand (fremskridt, bogmærker, indstillinger) gemmes kun i telefonens `localStorage`. Ingen login og ingen tracking.
 
 ### Data

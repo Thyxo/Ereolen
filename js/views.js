@@ -327,7 +327,24 @@ export function renderMore(el) {
   ];
   screen(el, header({ title: 'Mere' }), `
     <ul class="mp-list plain">${rows.map(([i, t]) => `<li><button>${i}<span>${t}</span>${icon.chevron}</button></li>`).join('')}</ul>
-    <p class="fine center">eReolen · version 4.12.1</p>`);
+    <p class="fine center version">eReolen · version 4.12.1</p>
+    <p class="diag" hidden></p>`);
+  // Skjult diagnose: hold på versionslinjen
+  const ver = el.querySelector('.version');
+  const diag = el.querySelector('.diag');
+  onLongPress(ver, 800, () => {
+    if (!diag.hidden) { diag.hidden = true; return; }
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:absolute;visibility:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
+    document.body.appendChild(probe);
+    const cs = getComputedStyle(probe);
+    const safe = `${parseFloat(cs.paddingTop)}/${parseFloat(cs.paddingBottom)}`;
+    probe.remove();
+    const appH = Math.round(document.getElementById('app').getBoundingClientRect().height);
+    const standalone = navigator.standalone === true || window.matchMedia?.('(display-mode: standalone)').matches;
+    diag.textContent = `screen ${window.screen.width}×${window.screen.height} · inner ${innerWidth}×${innerHeight} · app ${appH} · safe ${safe} · standalone ${standalone ? 'ja' : 'nej'} · fix ${document.body.style.height ? 'til' : 'fra'}`;
+    diag.hidden = false;
+  });
 }
 
 // ---------- Bogside ----------

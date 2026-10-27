@@ -202,23 +202,26 @@ document.addEventListener('click', (e) => {
 });
 window.addEventListener('popstate', route);
 
-// iOS-hjemmeskærm: CSS-højderne (100%, 100vh, lvh) kan være for lave med
-// gennemsigtig statusbar. Brug telefonens målte højde til html, body og appen.
-function fitHeight() {
-  let h = Math.max(window.innerHeight, document.documentElement.clientHeight);
-  // På hjemmeskærmen melder iOS en for lav højde (minus statusbaren).
-  // Brug i stedet skærmens rigtige højde (appen kører kun i portræt).
-  const standalone = navigator.standalone === true || window.matchMedia?.('(display-mode: standalone)').matches;
-  if (standalone && window.screen?.height) {
-    const portrait = window.innerHeight >= window.innerWidth;
-    const full = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
-    if (full > h) h = full;
-  }
-  document.documentElement.style.setProperty('--app-h', `${h}px`);
+// iOS-hjemmeskærm (standalone + black-translucent + viewport-fit=cover):
+// siden bliver ca. 59 pt for lav (statuslinjens højde), og iOS melder det ikke
+// altid via innerHeight. Giv derfor altid html, body og appen skærmens fulde
+// højde, når appen kører fra hjemmeskærmen i portræt.
+const isStandalone = () => navigator.standalone === true || window.matchMedia?.('(display-mode: standalone)').matches;
+function heightFixActive() {
+  return isStandalone() && innerHeight > innerWidth && screen.height >= innerHeight;
 }
-window.addEventListener('resize', fitHeight);
-window.addEventListener('orientationchange', () => setTimeout(fitHeight, 300));
-fitHeight();
+function fixHeight() {
+  const fix = heightFixActive();
+  for (const el of [document.body, app]) {
+    el.style.height = fix ? `${screen.height}px` : '';
+    el.style.bottom = fix ? 'auto' : '';
+  }
+  document.documentElement.style.height = fix ? `${screen.height}px` : '';
+}
+['resize', 'orientationchange', 'pageshow'].forEach((ev) => window.addEventListener(ev, () => setTimeout(fixHeight, 50)));
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') fixHeight(); });
+fixHeight();
+[100, 400, 1000, 2500].forEach((ms) => setTimeout(fixHeight, ms));
 
 // Forhindr zoom med to fingre og dobbelttryk (føles som en app)
 document.addEventListener('gesturestart', (e) => e.preventDefault());
