@@ -1,6 +1,6 @@
 // Service worker: alt til læsning ligger i cachen, så appen virker offline.
 // Netværk først (altid nyeste version), cache som reserve.
-const CACHE = 'ereolen-v11';
+const CACHE = 'ereolen-v12';
 const ASSETS = [
   '/',
   '/index.html',
@@ -21,6 +21,15 @@ const ASSETS = [
   '/fonts/source-sans-3-600.woff2',
   '/fonts/source-sans-3-700.woff2',
   '/fonts/source-sans-3-900.woff2',
+  '/icons/covers/fyrtojet.jpg',
+  '/icons/covers/grantraeet.jpg',
+  '/icons/covers/klods-hans.jpg',
+  '/icons/covers/lille-claus-og-store-claus.jpg',
+  '/icons/covers/nattergalen.jpg',
+  '/icons/covers/ole-lukoje.jpg',
+  '/icons/covers/prinsessen-paa-aerten.jpg',
+  '/icons/covers/snedronningen.jpg',
+  '/icons/covers/tommelise.jpg',
   '/icons/ui/chevron-down.png',
   '/icons/ui/chevron-right.png',
   '/icons/ui/ebook.png',

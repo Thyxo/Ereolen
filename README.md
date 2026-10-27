@@ -70,6 +70,7 @@ De 8 bøger er enten ulæste eller færdiglæste, så »Læs« / »Læs igen« a
 | Fil | Indhold |
 |---|---|
 | `data/books.json` | Titler, sider og tekst (genereres) |
+| `icons/covers/<id>.jpg` | Rigtige forsider (danske udgaver, hentet fra bibliotek.dk). Tegnet SVG-forside i `js/covers.js` bruges som reserve |
 | `data/words.json` | De 8 ord med tilladte bøjningsformer samt `minLong` (11), `maxOther` (8) og `maxAtMaxOther` (2) |
 | `data/pageSets.json` | For hver side: hvilket ordsæt den hører til (genereres) |
 | `content/*.txt` | Kilde: metadata, forord og de omskrevne sider (adskilt af `---`) |

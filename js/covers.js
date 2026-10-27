@@ -1,4 +1,5 @@
-// Forsider tegnet som SVG – ingen billedfiler, virker offline.
+// Forsider: rigtige omslag (icons/covers/<id>.jpg) – tegnet SVG som reserve.
+const PHOTO = new Set(['fyrtojet', 'grantraeet', 'klods-hans', 'lille-claus-og-store-claus', 'nattergalen', 'ole-lukoje', 'prinsessen-paa-aerten', 'snedronningen', 'tommelise']);
 const C = {
   'anne-lisbeth': { bg: '#1f3b4d', fg: '#efe4cc', ac: '#86b0c0', style: 'band', motif: 'waves' },
   'bedstemoder': { bg: '#efe6da', fg: '#5a2a2a', ac: '#b5485d', style: 'frame', motif: 'rose' },
@@ -109,6 +110,7 @@ const author = (y, color, x = 100, anchor = 'middle') =>
   `<text x="${x}" y="${y}" fill="${color}" font-family="Helvetica, Arial, sans-serif" font-size="9.5" letter-spacing="2.4" text-anchor="${anchor}">H.C. ANDERSEN</text>`;
 
 export function coverSVG(book) {
+  if (PHOTO.has(book.id)) return `<img src="/icons/covers/${book.id}.jpg" alt="" decoding="async" draggable="false">`;
   const c = C[book.id] || { bg: '#444', fg: '#fff', ac: '#aaa', style: 'full', motif: 'flake' };
   const motif = M[c.motif];
   let body = '';

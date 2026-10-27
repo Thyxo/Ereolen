@@ -239,6 +239,7 @@ async function boot() {
     ['tab-home', 'tab-home-on', 'tab-search', 'tab-play', 'tab-user', 'tab-user-on', 'tab-menu', 'ebook', 'chevron-right',
       'r-close', 'r-aa', 'r-toc', 'r-bookmark', 'r-bookmark-on', 'mp-loans', 'mp-reserve', 'mp-heart', 'mp-history', 'gear',
       'chevron-down', 'search-white', 'logo', 'logo-sub'].forEach((n) => { new Image().src = `/icons/ui/${n}.png`; });
+    BOOKS.forEach((b) => { new Image().src = `/icons/covers/${b.id}.jpg`; });
     route();
   } catch (err) {
     app.innerHTML = `<div class="boot-error"><p>Der opstod en fejl. Tjek din forbindelse og prøv igen.</p><button onclick="location.reload()">Prøv igen</button></div>`;
