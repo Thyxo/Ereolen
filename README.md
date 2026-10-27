@@ -7,14 +7,14 @@ En PWA (mobil først) med 9 af H.C. Andersens mest kendte eventyr. Den ser ud so
 ## Effekten (mode 1)
 
 1. Giv tilskueren telefonen. Lad dem gå til **Læs/lyt**, åbne en bog og bladre til en tilfældig side.
-2. Bed dem vælge **et langt ord på siden (mindst 10 bogstaver)** og huske det.
+2. Bed dem vælge **et af de længste ord på siden** (sig fx: »find et rigtig langt ord«) og huske det.
 3. Bed dem gå tilbage og åbne den bog, hvis titel starter med samme bogstav som ordet.
 4. Du kender nu ordet: se titlen, spørg om den, eller brug den skjulte peek (se nedenfor).
 5. Kicker (valgfri): tilskueren åbner forordet i bogen. Dér står deres ord.
 
 ### Hemmeligheden
 
-Teksterne er omskrevet, så **hver side indeholder præcis de samme 8 lange ord** (10+ bogstaver), flettet diskret ind i eventyret og i ny rækkefølge på hver side. **Alle andre ord har højst 9 bogstaver.** Uanset hvilken side og hvilket langt ord tilskueren vælger, er det ét af de 8.
+Teksterne er omskrevet, så **hver side indeholder præcis de samme 8 lange ord** (11+ bogstaver), flettet diskret ind i eventyret og i ny rækkefølge på hver side. **Alle andre ord har højst 8 bogstaver, og højst 2 ord pr. side har præcis 8.** Hullet på mindst 3 bogstaver gør, at de lange ord tydeligt springer i øjnene – et 9-bogstavs ord som »København« kan ikke forveksles. Uanset hvilken side og hvilket langt ord tilskueren vælger, er det ét af de 8.
 
 `scripts/check-pages.mjs` kontrollerer det for hver eneste side, og `build-data.mjs` nægter at bygge, hvis en side bryder reglen.
 
@@ -28,7 +28,7 @@ Teksterne er omskrevet, så **hver side indeholder præcis de samme 8 lange ord*
 | L | Lille Claus og store Claus | **Lommetørklæde** |
 | N | Nattergalen | **Nattevægter** |
 | P | Prinsessen paa Ærten | **Pengepung(en)** |
-| S | Snedronningen | **Sommerfugl** |
+| S | Snedronningen | **Sommerfugl(en/e/ene)** |
 | T | Tommelise | **Tjenestepige** |
 
 *Ole Lukøje* har intet ord – den er god som første bog, tilskueren bladrer i.
@@ -70,7 +70,7 @@ De 8 bøger er enten ulæste eller færdiglæste, så »Læs« / »Læs igen« a
 | Fil | Indhold |
 |---|---|
 | `data/books.json` | Titler, sider og tekst (genereres) |
-| `data/words.json` | De 8 ord med tilladte bøjningsformer og `minLong` (10) |
+| `data/words.json` | De 8 ord med tilladte bøjningsformer samt `minLong` (11), `maxOther` (8) og `maxAtMaxOther` (2) |
 | `data/pageSets.json` | For hver side: hvilket ordsæt den hører til (genereres) |
 | `content/*.txt` | Kilde: metadata, forord og de omskrevne sider (adskilt af `---`) |
 | `content/original/` | De originale tekster fra andersenstories.com |

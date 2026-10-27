@@ -1,6 +1,8 @@
 // Kontrollerer, at hver side i content/*.txt følger tricket:
 //  - alle 8 lange ord står præcis én gang på hver side
-//  - intet andet ord på siden har MIN_LONG bogstaver eller flere
+//  - alle andre ord har højst MAX_OTHER bogstaver (så der er et tydeligt hul
+//    mellem de lange ord og resten), og kun få ord rammer MAX_OTHER
+//  - ord med bindestreg (fx Klods-Hans) tælles som ét ord
 //  - siden har en passende længde (så den kan være på én skærm)
 //
 // Brug:  node scripts/check-pages.mjs                 (alle bøger)
@@ -13,6 +15,8 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const words = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/words.json'), 'utf8'));
 const SET = words.sets[words.ownModeSet].words;
 const MIN_LONG = words.minLong;          // lange ord: mindst så mange bogstaver
+const MAX_OTHER = words.maxOther;        // alle andre ord: højst så mange bogstaver
+const MAX_AT_MAX = words.maxAtMaxOther;  // højst så mange ord med præcis MAX_OTHER bogstaver pr. side
 const MIN_CHARS = 450;
 const MAX_CHARS = 820;
 
@@ -20,7 +24,7 @@ const formToBase = new Map();
 for (const w of SET) for (const f of w.forms) formToBase.set(f.toLowerCase(), w.word);
 
 export function tokens(text) {
-  return text.match(/[A-Za-zÆØÅæøåÉéÈèÄäÖöÜü]+/g) || [];
+  return text.match(/[A-Za-zÆØÅæøåÉéÈèÄäÖöÜü]+(?:-[A-Za-zÆØÅæøåÉéÈèÄäÖöÜü]+)*/g) || [];
 }
 
 export function parsePages(src) {
@@ -38,13 +42,16 @@ export function checkPage(text) {
   if (len > MAX_CHARS) errors.push(`for lang (${len} tegn, max ${MAX_CHARS})`);
   const count = new Map(SET.map((w) => [w.word, 0]));
   const bad = [];
+  const atMax = [];
   for (const t of tokens(text)) {
-    if ([...t].length < MIN_LONG) continue;
+    const n = [...t].length;
     const base = formToBase.get(t.toLowerCase());
     if (base) count.set(base, count.get(base) + 1);
-    else bad.push(t);
+    else if (n > MAX_OTHER) bad.push(t);
+    else if (n === MAX_OTHER) atMax.push(t);
   }
-  if (bad.length) errors.push(`andre lange ord (${MIN_LONG}+ bogstaver): ${[...new Set(bad)].join(', ')}`);
+  if (bad.length) errors.push(`for lange ord (over ${MAX_OTHER} bogstaver – skal omskrives): ${[...new Set(bad)].join(', ')}`);
+  if (atMax.length > MAX_AT_MAX) errors.push(`for mange ord med ${MAX_OTHER} bogstaver (${atMax.length}, max ${MAX_AT_MAX}): ${atMax.join(', ')}`);
   for (const [w, n] of count) {
     if (n === 0) errors.push(`mangler »${w}«`);
     if (n > 1) errors.push(`»${w}« står ${n} gange`);
