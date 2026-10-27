@@ -327,7 +327,7 @@ export function renderMore(el) {
   ];
   screen(el, header({ title: 'Mere' }), `
     <ul class="mp-list plain">${rows.map(([i, t]) => `<li><button>${i}<span>${t}</span>${icon.chevron}</button></li>`).join('')}</ul>
-    <p class="fine center version">eReolen · version 4.12.1</p>
+    <p class="fine center version">eReolen · version 4.12.2</p>
     <p class="diag" hidden></p>`);
   // Skjult diagnose: hold på versionslinjen
   const ver = el.querySelector('.version');
